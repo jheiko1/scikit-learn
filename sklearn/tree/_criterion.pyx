@@ -27,6 +27,7 @@ cimport numpy as np
 np.import_array()
 
 from ._utils cimport rand_int #added by Morgan
+from ._utils cimport RAND_R_MAX # added by morgan
 from ._utils cimport log
 from ._utils cimport safe_realloc
 from ._utils cimport sizet_ptr_to_ndarray
@@ -986,7 +987,7 @@ cdef class MAE(RegressionCriterion):
     cdef np.ndarray right_child
     cdef DOUBLE_t* node_medians
 
-    def __cinit__(self, SIZE_t n_outputs, SIZE_t n_samples): #TODO do I need to modify this?
+    def __cinit__(self, SIZE_t n_outputs, SIZE_t n_samples, object random_state = None): #TODO do I need to modify this?
         """Initialize parameters for this criterion.
 
         Parameters
@@ -1348,11 +1349,11 @@ cdef class AxisProjection(RegressionCriterion):
         """Evaluate the impurity of the current node, i.e. the impurity of
            samples[start:end]."""
 
-        cdef double* sum_total = self.sum_total #delete
-        cdef double impurity #delete
-        cdef SIZE_t k #delete
+        #cdef double* sum_total = self.sum_total #delete
+        #cdef double impurity #delete
+        #cdef SIZE_t k #delete
 
-        """
+        
         cdef double impurity
         cdef DOUBLE_t* sample_weight = self.sample_weight
         cdef SIZE_t* samples = self.samples
@@ -1367,13 +1368,17 @@ cdef class AxisProjection(RegressionCriterion):
         cdef SIZE_t i
         cdef SIZE_t p
         cdef SIZE_t k # modified
-        # TODO choose random k here
+        cdef UINT32_t rand_r_state
+ 
+        with gil: # is this okay?
+            rand_r_state = self.random_state.randint(0, RAND_R_MAX)
+        cdef UINT32_t* random_state = &rand_r_state
 
-        k = rand_int(0, self.n_outputs, self.random_state) #TODO what should random state be?
+        k = rand_int(0, self.n_outputs, random_state) #TODO is this random state okay?
 
         cdef DOUBLE_t w = 1.0
 
-        for p in range(start, pos):
+        for p in range(start, end):
             i = samples[p]
             if sample_weight != NULL:
                 w = sample_weight[i]
@@ -1383,13 +1388,8 @@ cdef class AxisProjection(RegressionCriterion):
         impurity = sq_sum_total / self.weighted_n_node_samples
         impurity -= (sum_total[k] / self.weighted_n_node_samples)**2.0
 
-        return impurity / self.n_outputs
-        """
-        impurity = self.sq_sum_total / self.weighted_n_node_samples #delete
-        for k in range(self.n_outputs): #delete
-            impurity -= (sum_total[k] / self.weighted_n_node_samples)**2.0 #delete
-
-        return impurity / self.n_outputs #delete
+        return impurity #/ self.n_outputs
+        
 
     cdef double proxy_impurity_improvement(self) nogil:
         """Compute a proxy of the impurity reduction
@@ -1422,6 +1422,33 @@ cdef class AxisProjection(RegressionCriterion):
         """Evaluate the impurity in children nodes, i.e. the impurity of the
            left child (samples[start:pos]) and the impurity the right child
            (samples[pos:end])."""
+        """
+
+        cdef SIZE_t i
+        cdef SIZE_t p
+        cdef SIZE_t k # modified
+        cdef UINT32_t rand_r_state
+ 
+        with gil: # is this okay?
+            rand_r_state = self.random_state.randint(0, RAND_R_MAX)
+        cdef UINT32_t* random_state = &rand_r_state
+
+        k = rand_int(zero, self.n_outputs, random_state) #TODO is this random state okay?
+
+        cdef DOUBLE_t w = 1.0
+
+        for p in range(start, end):
+            i = samples[p]
+            if sample_weight != NULL:
+                w = sample_weight[i]
+            y_ik = self.y[i, k]
+            sq_sum_total += w * y_ik * y_ik
+
+        impurity = sq_sum_total / self.weighted_n_node_samples
+        impurity -= (sum_total[k] / self.weighted_n_node_samples)**2.0
+
+        return impurity #/ self.n_outputs
+        """
 
         cdef DOUBLE_t* sample_weight = self.sample_weight
         cdef SIZE_t* samples = self.samples
@@ -1439,28 +1466,32 @@ cdef class AxisProjection(RegressionCriterion):
         cdef SIZE_t p
         cdef SIZE_t k
         cdef DOUBLE_t w = 1.0
+        cdef UINT32_t rand_r_state
+ 
+        with gil: # is this okay?
+            rand_r_state = self.random_state.randint(0, RAND_R_MAX)
+        cdef UINT32_t* random_state = &rand_r_state
+
+        k = rand_int(0, self.n_outputs, random_state) #TODO is this random state okay?
 
         for p in range(start, pos):
             i = samples[p]
 
             if sample_weight != NULL:
                 w = sample_weight[i]
-            # choose random k here
-            for k in range(self.n_outputs):
-                y_ik = self.y[i, k]
-                sq_sum_left += w * y_ik * y_ik
+            y_ik = self.y[i, k]
+            sq_sum_left += w * y_ik * y_ik
 
         sq_sum_right = self.sq_sum_total - sq_sum_left
 
         impurity_left[0] = sq_sum_left / self.weighted_n_left
         impurity_right[0] = sq_sum_right / self.weighted_n_right
 
-        for k in range(self.n_outputs):
-            impurity_left[0] -= (sum_left[k] / self.weighted_n_left) ** 2.0
-            impurity_right[0] -= (sum_right[k] / self.weighted_n_right) ** 2.0
+        impurity_left[0] -= (sum_left[k] / self.weighted_n_left) ** 2.0
+        impurity_right[0] -= (sum_right[k] / self.weighted_n_right) ** 2.0
 
-        impurity_left[0] /= self.n_outputs
-        impurity_right[0] /= self.n_outputs
+        impurity_left[0]
+        impurity_right[0]
 
 cdef class ObliqueProjection(RegressionCriterion):
     r"""Mean absolute error impurity criterion
