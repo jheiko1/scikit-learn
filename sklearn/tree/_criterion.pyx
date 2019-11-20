@@ -1410,9 +1410,16 @@ cdef class AxisProjection(RegressionCriterion):
         cdef double proxy_impurity_left = 0.0
         cdef double proxy_impurity_right = 0.0
 
-        for k in range(self.n_outputs):
-            proxy_impurity_left += sum_left[k] * sum_left[k]
-            proxy_impurity_right += sum_right[k] * sum_right[k]
+        cdef UINT32_t rand_r_state
+ 
+        with gil: # is this okay?
+            rand_r_state = self.random_state.randint(0, RAND_R_MAX)
+        cdef UINT32_t* random_state = &rand_r_state
+
+        k = rand_int(0, self.n_outputs, random_state) #TODO is this random state okay?
+
+        proxy_impurity_left += sum_left[k] * sum_left[k]
+        proxy_impurity_right += sum_right[k] * sum_right[k]
 
         return (proxy_impurity_left / self.weighted_n_left +
                 proxy_impurity_right / self.weighted_n_right)
@@ -1423,31 +1430,6 @@ cdef class AxisProjection(RegressionCriterion):
            left child (samples[start:pos]) and the impurity the right child
            (samples[pos:end])."""
         """
-
-        cdef SIZE_t i
-        cdef SIZE_t p
-        cdef SIZE_t k # modified
-        cdef UINT32_t rand_r_state
- 
-        with gil: # is this okay?
-            rand_r_state = self.random_state.randint(0, RAND_R_MAX)
-        cdef UINT32_t* random_state = &rand_r_state
-
-        k = rand_int(zero, self.n_outputs, random_state) #TODO is this random state okay?
-
-        cdef DOUBLE_t w = 1.0
-
-        for p in range(start, end):
-            i = samples[p]
-            if sample_weight != NULL:
-                w = sample_weight[i]
-            y_ik = self.y[i, k]
-            sq_sum_total += w * y_ik * y_ik
-
-        impurity = sq_sum_total / self.weighted_n_node_samples
-        impurity -= (sum_total[k] / self.weighted_n_node_samples)**2.0
-
-        return impurity #/ self.n_outputs
         """
 
         cdef DOUBLE_t* sample_weight = self.sample_weight
@@ -1496,21 +1478,67 @@ cdef class AxisProjection(RegressionCriterion):
 cdef class ObliqueProjection(RegressionCriterion):
     r"""Mean absolute error impurity criterion
 
+
+
        MAE = (1 / n)*(\sum_i |y_i - f_i|), where y_i is the true
        value and f_i is the predicted value."""
     cdef double node_impurity(self) nogil:
         """Evaluate the impurity of the current node, i.e. the impurity of
            samples[start:end]."""
 
-        cdef double* sum_total = self.sum_total
+        #cdef double* sum_total = self.sum_total #delete
+        #cdef double impurity #delete
+        #cdef SIZE_t k #delete
+
+        
         cdef double impurity
-        cdef SIZE_t k
+        cdef DOUBLE_t* sample_weight = self.sample_weight
+        cdef SIZE_t* samples = self.samples
+        cdef SIZE_t end = self.end
+        cdef SIZE_t start = self.start
 
-        impurity = self.sq_sum_total / self.weighted_n_node_samples
+        cdef double* sum_total = self.sum_total #modified
+        cdef DOUBLE_t y_ik
+
+        cdef double sq_sum_total = 0.0
+
+        cdef SIZE_t i
+        cdef SIZE_t p
+        cdef SIZE_t k # modified
+        cdef UINT32_t rand_r_state
+        cdef SIZE_t num_pred # modified
+        cdef SIZE_t a # modified
+        pred_weights = <double*> calloc(self.n_outputs, sizeof(double))
+ 
+        with gil: # is this okay?
+            rand_r_state = self.random_state.randint(0, RAND_R_MAX)
+        cdef UINT32_t* random_state = &rand_r_state
+
+        num_pred = rand_int(0, self.n_outputs, random_state) #TODO is this random state okay?
+
+        for i in range(num_pred):
+            k = rand_int(0, self.n_outputs, random_state)
+            a = rand_int(0, 2, random_state)
+            if a == 0:
+                a -= 1
+            pred_weights[k] = a # didn't normalize
+
+        cdef DOUBLE_t w = 1.0
+
+        for p in range(start, end):
+            i = samples[p]
+            if sample_weight != NULL:
+                w = sample_weight[i]
+            for k in range(self.n_outputs):
+                y_ik = self.y[i, k]
+                sq_sum_total += w * y_ik * y_ik * pred_weights[k]
+
+        impurity = sq_sum_total / self.weighted_n_node_samples
         for k in range(self.n_outputs):
-            impurity -= (sum_total[k] / self.weighted_n_node_samples)**2.0
+            impurity -= (sum_total[k] * pred_weights[k]/ self.weighted_n_node_samples)**2.0
 
-        return impurity / self.n_outputs
+        return impurity / num_pred
+        
 
     cdef double proxy_impurity_improvement(self) nogil:
         """Compute a proxy of the impurity reduction
@@ -1531,9 +1559,27 @@ cdef class ObliqueProjection(RegressionCriterion):
         cdef double proxy_impurity_left = 0.0
         cdef double proxy_impurity_right = 0.0
 
+        cdef UINT32_t rand_r_state
+        cdef SIZE_t num_pred # modified
+        cdef SIZE_t a # modified
+        pred_weights = <double*> calloc(self.n_outputs, sizeof(double))
+ 
+        with gil: # is this okay?
+            rand_r_state = self.random_state.randint(0, RAND_R_MAX)
+        cdef UINT32_t* random_state = &rand_r_state
+
+        num_pred = rand_int(0, self.n_outputs, random_state) #TODO is this random state okay?
+
+        for i in range(num_pred):
+            k = rand_int(0, self.n_outputs, random_state)
+            a = rand_int(0, 2, random_state)
+            if a == 0:
+                a -= 1
+            pred_weights[k] = a # didn't normalize
+
         for k in range(self.n_outputs):
-            proxy_impurity_left += sum_left[k] * sum_left[k]
-            proxy_impurity_right += sum_right[k] * sum_right[k]
+            proxy_impurity_left += sum_left[k] * sum_left[k] * pred_weights[k]
+            proxy_impurity_right += sum_right[k] * sum_right[k] * pred_weights[k]
 
         return (proxy_impurity_left / self.weighted_n_left +
                 proxy_impurity_right / self.weighted_n_right)
@@ -1543,6 +1589,9 @@ cdef class ObliqueProjection(RegressionCriterion):
         """Evaluate the impurity in children nodes, i.e. the impurity of the
            left child (samples[start:pos]) and the impurity the right child
            (samples[pos:end])."""
+        """
+
+        """
 
         cdef DOUBLE_t* sample_weight = self.sample_weight
         cdef SIZE_t* samples = self.samples
@@ -1558,27 +1607,42 @@ cdef class ObliqueProjection(RegressionCriterion):
 
         cdef SIZE_t i
         cdef SIZE_t p
-        cdef SIZE_t k
-        cdef DOUBLE_t w = 1.0
+        cdef SIZE_t k # modified
+        cdef UINT32_t rand_r_state
+        cdef SIZE_t num_pred # modified
+        cdef SIZE_t a # modified
+        pred_weights = <double*> calloc(self.n_outputs, sizeof(double))
+ 
+        with gil: # is this okay?
+            rand_r_state = self.random_state.randint(0, RAND_R_MAX)
+        cdef UINT32_t* random_state = &rand_r_state
 
+        num_pred = rand_int(0, self.n_outputs, random_state) #TODO is this random state okay?
+
+        for i in range(num_pred):
+            k = rand_int(0, self.n_outputs, random_state)
+            a = rand_int(0, 2, random_state)
+            if a == 0:
+                a -= 1
+            pred_weights[k] = a # didn't normalize
+
+        cdef DOUBLE_t w = 1.0
         for p in range(start, pos):
             i = samples[p]
 
             if sample_weight != NULL:
                 w = sample_weight[i]
-
             for k in range(self.n_outputs):
                 y_ik = self.y[i, k]
-                sq_sum_left += w * y_ik * y_ik
+                sq_sum_left += w * y_ik * y_ik * pred_weights[k]
 
         sq_sum_right = self.sq_sum_total - sq_sum_left
 
         impurity_left[0] = sq_sum_left / self.weighted_n_left
         impurity_right[0] = sq_sum_right / self.weighted_n_right
 
-        for k in range(self.n_outputs):
-            impurity_left[0] -= (sum_left[k] / self.weighted_n_left) ** 2.0
-            impurity_right[0] -= (sum_right[k] / self.weighted_n_right) ** 2.0
+        impurity_left[0] -= (sum_left[k] * pred_weights[k]/ self.weighted_n_left) ** 2.0
+        impurity_right[0] -= (sum_right[k] * pred_weights[k]/ self.weighted_n_right) ** 2.0
 
-        impurity_left[0] /= self.n_outputs
-        impurity_right[0] /= self.n_outputs
+        impurity_left[0]
+        impurity_right[0]
