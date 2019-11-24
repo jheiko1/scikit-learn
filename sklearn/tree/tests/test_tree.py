@@ -1762,7 +1762,7 @@ def test_mae():
     # Test MAE where sample weights are non-uniform (as illustrated above):
     dt_mae.fit(X=[[3], [5], [3], [8], [5]], y=[6, 7, 3, 4, 3],
                sample_weight=[0.6, 0.3, 0.1, 1.0, 0.3])
-    assert_allclose(dt_mae.tree_.impurity, [2.5 / 2.3, 0.3 / 0.7, 1.2 / 1.6], rtol=0.6)
+    assert_allclose(dt_mae.tree_.impurity, [2.5 / 2.3, 0.3 / 0.7, 1.2 / 1.6])
     assert_array_equal(dt_mae.tree_.value.flat, [4.0, 6.0, 4.0])
 
     # Test MAE where all sample weights are uniform:

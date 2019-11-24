@@ -1344,15 +1344,96 @@ cdef class AxisProjection(RegressionCriterion):
 
        MSE = var_left + var_right
     """
-
+    '''
     cdef double node_impurity(self) nogil:
         """Evaluate the impurity of the current node, i.e. the impurity of
            samples[start:end]."""
 
-        #cdef double* sum_total = self.sum_total #delete
-        #cdef double impurity #delete
-        #cdef SIZE_t k #delete
+        cdef double* sum_total = self.sum_total
+        cdef double impurity
+        cdef SIZE_t k
 
+        impurity = self.sq_sum_total / self.weighted_n_node_samples
+        for k in range(self.n_outputs):
+            impurity -= (sum_total[k] / self.weighted_n_node_samples)**2.0
+
+        return impurity / self.n_outputs
+
+    cdef double proxy_impurity_improvement(self) nogil:
+        """Compute a proxy of the impurity reduction
+
+        This method is used to speed up the search for the best split.
+        It is a proxy quantity such that the split that maximizes this value
+        also maximizes the impurity improvement. It neglects all constant terms
+        of the impurity decrease for a given split.
+
+        The absolute impurity improvement is only computed by the
+        impurity_improvement method once the best split has been found.
+        """
+
+        cdef double* sum_left = self.sum_left
+        cdef double* sum_right = self.sum_right
+
+        cdef SIZE_t k
+        cdef double proxy_impurity_left = 0.0
+        cdef double proxy_impurity_right = 0.0
+
+        for k in range(self.n_outputs):
+            proxy_impurity_left += sum_left[k] * sum_left[k]
+            proxy_impurity_right += sum_right[k] * sum_right[k]
+
+        return (proxy_impurity_left / self.weighted_n_left +
+                proxy_impurity_right / self.weighted_n_right)
+
+    cdef void children_impurity(self, double* impurity_left,
+                                double* impurity_right) nogil:
+        """Evaluate the impurity in children nodes, i.e. the impurity of the
+           left child (samples[start:pos]) and the impurity the right child
+           (samples[pos:end])."""
+
+        cdef DOUBLE_t* sample_weight = self.sample_weight
+        cdef SIZE_t* samples = self.samples
+        cdef SIZE_t pos = self.pos
+        cdef SIZE_t start = self.start
+
+        cdef double* sum_left = self.sum_left
+        cdef double* sum_right = self.sum_right
+        cdef DOUBLE_t y_ik
+
+        cdef double sq_sum_left = 0.0
+        cdef double sq_sum_right
+
+        cdef SIZE_t i
+        cdef SIZE_t p
+        cdef SIZE_t k
+        cdef DOUBLE_t w = 1.0
+
+        for p in range(start, pos):
+            i = samples[p]
+
+            if sample_weight != NULL:
+                w = sample_weight[i]
+
+            for k in range(self.n_outputs):
+                y_ik = self.y[i, k]
+                sq_sum_left += w * y_ik * y_ik
+
+        sq_sum_right = self.sq_sum_total - sq_sum_left
+
+        impurity_left[0] = sq_sum_left / self.weighted_n_left
+        impurity_right[0] = sq_sum_right / self.weighted_n_right
+
+        for k in range(self.n_outputs):
+            impurity_left[0] -= (sum_left[k] / self.weighted_n_left) ** 2.0
+            impurity_right[0] -= (sum_right[k] / self.weighted_n_right) ** 2.0
+
+        impurity_left[0] /= self.n_outputs
+        impurity_right[0] /= self.n_outputs
+    '''
+
+    cdef double node_impurity(self) nogil:
+        """Evaluate the impurity of the current node, i.e. the impurity of
+           samples[start:end]."""
         
         cdef double impurity
         cdef DOUBLE_t* sample_weight = self.sample_weight
@@ -1421,6 +1502,7 @@ cdef class AxisProjection(RegressionCriterion):
         proxy_impurity_left += sum_left[k] * sum_left[k]
         proxy_impurity_right += sum_right[k] * sum_right[k]
 
+
         return (proxy_impurity_left / self.weighted_n_left +
                 proxy_impurity_right / self.weighted_n_right)
 
@@ -1436,13 +1518,14 @@ cdef class AxisProjection(RegressionCriterion):
         cdef SIZE_t* samples = self.samples
         cdef SIZE_t pos = self.pos
         cdef SIZE_t start = self.start
+        cdef SIZE_t end = self.end
 
         cdef double* sum_left = self.sum_left
         cdef double* sum_right = self.sum_right
         cdef DOUBLE_t y_ik
 
         cdef double sq_sum_left = 0.0
-        cdef double sq_sum_right
+        cdef double sq_sum_right = 0.0
 
         cdef SIZE_t i
         cdef SIZE_t p
@@ -1464,7 +1547,15 @@ cdef class AxisProjection(RegressionCriterion):
             y_ik = self.y[i, k]
             sq_sum_left += w * y_ik * y_ik
 
-        sq_sum_right = self.sq_sum_total - sq_sum_left
+        for p in range(pos, end):
+            i = samples[p]
+
+            if sample_weight != NULL:
+                w = sample_weight[i]
+            y_ik = self.y[i, k]
+            sq_sum_right += w * y_ik * y_ik
+
+        #sq_sum_right = self.sq_sum_total - sq_sum_left
 
         impurity_left[0] = sq_sum_left / self.weighted_n_left
         impurity_right[0] = sq_sum_right / self.weighted_n_right
@@ -1474,6 +1565,10 @@ cdef class AxisProjection(RegressionCriterion):
 
         impurity_left[0]
         impurity_right[0]
+
+        #with gil:
+        #    print(impurity_left[0], impurity_right[0])
+        
 
 cdef class ObliqueProjection(RegressionCriterion):
     r"""Mean absolute error impurity criterion
@@ -1514,7 +1609,10 @@ cdef class ObliqueProjection(RegressionCriterion):
             rand_r_state = self.random_state.randint(0, RAND_R_MAX)
         cdef UINT32_t* random_state = &rand_r_state
 
-        num_pred = rand_int(0, self.n_outputs, random_state) #TODO is this random state okay?
+        num_pred = rand_int(1, self.n_outputs+1, random_state) #TODO is this random state okay?
+
+        with gil:
+            print(num_pred)
 
         for i in range(num_pred):
             k = rand_int(0, self.n_outputs, random_state)
@@ -1597,13 +1695,14 @@ cdef class ObliqueProjection(RegressionCriterion):
         cdef SIZE_t* samples = self.samples
         cdef SIZE_t pos = self.pos
         cdef SIZE_t start = self.start
+        cdef SIZE_t end = self.end
 
         cdef double* sum_left = self.sum_left
         cdef double* sum_right = self.sum_right
         cdef DOUBLE_t y_ik
 
         cdef double sq_sum_left = 0.0
-        cdef double sq_sum_right
+        cdef double sq_sum_right = 0.0
 
         cdef SIZE_t i
         cdef SIZE_t p
@@ -1635,8 +1734,18 @@ cdef class ObliqueProjection(RegressionCriterion):
             for k in range(self.n_outputs):
                 y_ik = self.y[i, k]
                 sq_sum_left += w * y_ik * y_ik * pred_weights[k]
+        
+        for p in range(pos, end):
+            i = samples[p]
 
-        sq_sum_right = self.sq_sum_total - sq_sum_left
+            if sample_weight != NULL:
+                w = sample_weight[i]
+            for k in range(self.n_outputs):
+                y_ik = self.y[i, k]
+                sq_sum_right += w * y_ik * y_ik * pred_weights[k]
+        
+
+        #sq_sum_right = self.sq_sum_total - sq_sum_left
 
         impurity_left[0] = sq_sum_left / self.weighted_n_left
         impurity_right[0] = sq_sum_right / self.weighted_n_right
