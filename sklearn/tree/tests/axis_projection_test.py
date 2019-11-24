@@ -50,7 +50,7 @@ def measure_mse(X, y, max_depth=10, n_features=1, min_leaf_size=5, n_trees=1000,
     
     # Iterate over different split criteria
     errors = []
-    for split in ["mae", "mse", "axis"]:
+    for split in ["mae", "mse", "axis", "oblique"]:
 
         # Fit model
         rf = RandomForestRegressor(criterion=split, max_depth=max_depth, min_samples_leaf=min_leaf_size, n_estimators=n_trees, random_state=1)
@@ -107,7 +107,7 @@ if __name__ == "__main__":
 			print(n, i)
 
 	# Convert to dataframe
-	columns = ["mae", "mse", "projection_axis"]
+	columns = ["mae", "mse", "projection_axis", "projection _oblique"]
 	columns.insert(0, "n")
 	df = pd.DataFrame(results, columns=columns)
 	df = pd.melt(df, id_vars=['n'], value_vars=columns[1:], var_name='split', value_name='mse')
