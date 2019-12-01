@@ -458,7 +458,7 @@ def make_hastie_10_2(n_samples=12000, random_state=None):
     return X, y
 
 
-def make_regression(n_samples=100, n_features=100, n_informative=10,
+def make_linear_regression(n_samples=100, n_features=100, n_informative=10,
                     n_targets=1, bias=0.0, effective_rank=None,
                     tail_strength=0.5, noise=0.0, shuffle=True, coef=False,
                     random_state=None):

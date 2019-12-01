@@ -14,7 +14,7 @@ from sklearn.utils.testing import assert_raise_message
 from sklearn.datasets import make_classification
 from sklearn.datasets import make_multilabel_classification
 from sklearn.datasets import make_hastie_10_2
-from sklearn.datasets import make_regression
+from sklearn.datasets import make_linear_regression
 from sklearn.datasets import make_blobs
 from sklearn.datasets import make_friedman1
 from sklearn.datasets import make_friedman2
@@ -229,8 +229,8 @@ def test_make_hastie_10_2():
     assert np.unique(y).shape == (2,), "Unexpected number of classes"
 
 
-def test_make_regression():
-    X, y, c = make_regression(n_samples=100, n_features=10, n_informative=3,
+def test_make_linear_regression():
+    X, y, c = make_linear_regression(n_samples=100, n_features=10, n_informative=3,
                               effective_rank=5, coef=True, bias=0.0,
                               noise=1.0, random_state=0)
 
@@ -243,12 +243,12 @@ def test_make_regression():
     assert_almost_equal(np.std(y - np.dot(X, c)), 1.0, decimal=1)
 
     # Test with small number of features.
-    X, y = make_regression(n_samples=100, n_features=1)  # n_informative=3
+    X, y = make_linear_regression(n_samples=100, n_features=1)  # n_informative=3
     assert X.shape == (100, 1)
 
 
-def test_make_regression_multitarget():
-    X, y, c = make_regression(n_samples=100, n_features=10, n_informative=3,
+def test_make_linear_regression_multitarget():
+    X, y, c = make_linear_regression(n_samples=100, n_features=10, n_informative=3,
                               n_targets=3, coef=True, noise=1., random_state=0)
 
     assert X.shape == (100, 10), "X shape mismatch"

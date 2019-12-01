@@ -299,7 +299,7 @@ Samples generator
    datasets.make_low_rank_matrix
    datasets.make_moons
    datasets.make_multilabel_classification
-   datasets.make_regression
+   datasets.make_linear_regression
    datasets.make_s_curve
    datasets.make_sparse_coded_signal
    datasets.make_sparse_spd_matrix
