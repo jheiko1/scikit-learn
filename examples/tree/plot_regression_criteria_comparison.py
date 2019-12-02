@@ -1,22 +1,10 @@
 """
-=====================================================
-Plot randomly generated nonlinear regression datasets
-=====================================================
+=============================================================
+Comparing different regression split criteria on toy datasets
 
-Plot several randomly generated 1D regression datasets.
-This example illustrates the :func:`datasets.make_log_regression`,
-:func:`datasets.make_sin_regression`, :func:`datasets.make_square_regression`,
-:func:`datasets.make_multiplicative_noise`, and
-:func:`datasets.make_independent_noise` functions.
-
-For each, :math:`n = 100` points are sampled with noise to show the actual
-sample data used for one-dimensional relationships (red dots).
-
-For comparison purposes, :math:`n = 1000` points are sampled without noise to
-highlight each underlying dependency (black dots). Note that only black points
-are plotted for the :func:`datasets.make_multiplicative_noise`, and
-:func:`datasets.make_independent_noise` functions, as they do not have a noise
-parameter.
+For visual examples of these datasets, see
+:ref:`sphx_glr_auto_examples_datasets_plot_nonlinear_regression_datasets.py`.
+=============================================================
 """
 
 print(__doc__)
