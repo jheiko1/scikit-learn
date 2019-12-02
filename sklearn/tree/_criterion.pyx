@@ -1566,9 +1566,6 @@ cdef class AxisProjection(RegressionCriterion):
         impurity_left[0]
         impurity_right[0]
 
-        #with gil:
-        #    print(impurity_left[0], impurity_right[0])
-        
 
 cdef class ObliqueProjection(RegressionCriterion):
     r"""Mean absolute error impurity criterion
@@ -1610,9 +1607,6 @@ cdef class ObliqueProjection(RegressionCriterion):
         cdef UINT32_t* random_state = &rand_r_state
 
         num_pred = rand_int(1, self.n_outputs+1, random_state) #TODO is this random state okay?
-
-        with gil:
-            print(num_pred)
 
         for i in range(num_pred):
             k = rand_int(0, self.n_outputs, random_state)
