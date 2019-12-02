@@ -10,7 +10,7 @@ For visual examples of these datasets, see
 # Author: Vivek Gopalakrishnan <vgopala4@jhu.edu>
 # License: BSD 3 clause
 
-from itertools import product
+from itertools import product, repeat
 from multiprocessing import Pool
 
 import matplotlib.pyplot as plt
@@ -27,7 +27,6 @@ from sklearn.ensemble import RandomForestRegressor
 print(__doc__)
 
 ###############################################################################
-n_dimensions = 10
 noise = 100.0
 simulations = {
     "Logarithmic": [make_log_regression, noise],
@@ -54,7 +53,7 @@ def _test_forest(X, y, regr):
 
 
 ###############################################################################
-def main(simulation_name, n_samples, criterion, n_dimensions=n_dimensions, n_iter=10):
+def main(simulation_name, n_samples, criterion, n_dimensions):
     """Measure the performance of RandomForest under simulation conditions.
 
     Parameters
@@ -66,15 +65,24 @@ def main(simulation_name, n_samples, criterion, n_dimensions=n_dimensions, n_ite
     criterion : string
         Split criterion used to train forest. Choose from
         ("mse", "mae", "friedman_mse", "axis", "oblique").
-    n_dimensions : int, optional (default=10)
+    n_dimensions : int
         Number of features and targets to sample.
-    n_iter : int, optional (default=10)
-        Number of times to test a given parameter configuration.
 
     Returns
     -------
-    (average, error) : np.ndarray
-        NumPy array with the average MSE and standard error.
+    simulation_name : str
+        Key from `simulations` dictionary.
+    n_samples : int
+        Number of training samples.
+    criterion : string
+        Split criterion used to train forest. Choose from
+        ("mse", "mae", "friedman_mse", "axis", "oblique").
+    n_dimensions : int, optional (default=10)
+        Number of features and targets to sample.
+    score : float
+        Euclidean distance between y_pred and y_test.
+    runtime : float
+        Runtime (in seconds).
     """
     print(simulation_name, n_samples)
 
@@ -83,43 +91,42 @@ def main(simulation_name, n_samples, criterion, n_dimensions=n_dimensions, n_ite
     n_samples = int(n_samples)
     n_dimensions = int(n_dimensions)
 
-    # For each iteration in `n_iter`, train a forest on a newly sampled
-    # training set and save its performance on the validation set
-    score = []
-    for _ in range(n_iter):
+    # Sample training data
+    if noise is not None:
+        X_train, y_train = sim(n_samples=n_samples,
+                               n_dimensions=n_dimensions,
+                               noise=noise)
+    else:
+        X_train, y_train = sim(n_samples=n_samples,
+                               n_dimensions=n_dimensions)
 
-        # Sample training data
-        if noise is not None:
-            X_train, y_train = sim(n_samples=n_samples,
-                                   n_dimensions=n_dimensions,
-                                   noise=noise)
-        else:
-            X_train, y_train = sim(n_samples=n_samples,
-                                   n_dimensions=n_dimensions)
+    # Train forest
+    regr = _train_forest(X_train, y_train, criterion)
 
-        # Train RandomForest
-        regr = _train_forest(X_train, y_train, criterion)
-        forest_score = _test_forest(X_test, y_test, regr)
-        score.append(forest_score)
+    # Evaluate on testing data and record runtime
+    score = _test_forest(X_test, y_test, regr)
 
-    # Calculate average and standard deviation
-    score = np.array(score)
-    average = score.mean()
-    error = score.std() / np.sqrt(n_iter)
-
-    return np.array((average, error))
+    return (simulation_name, n_samples, criterion, n_dimensions, score, runtime)
 
 
 ###############################################################################
-# Construct the parameter space
 print("Constructing parameter space...")
+
+# Declare simulation parameters
 n_dimensions = 10
 simulation_names = simulations.keys()
-sample_sizes = np.arange(5, 101, 5)
+sample_sizes = np.arange(5, 51, 3)
 criteria = ["mae", "mse", "friedman_mse", "axis", "oblique"]
-params = product(simulation_names, sample_sizes, criteria)
 
-# Construct validation datasets
+# Number of times to repeat each simulation setting
+n_repeats = 10
+
+# Create the parameter space
+params = product(simulation_names, criteria, sample_sizes,
+                 repeat(n_dimensions), repeat=n_repeats)
+
+
+###############################################################################
 print("Constructing validation datasets...")
 for simulation_name, (sim, noise) in simulations.items():
     if noise is not None:
@@ -131,17 +138,19 @@ for simulation_name, (sim, noise) in simulations.items():
                              n_dimensions=n_dimensions)
     simulations[simulation_name].append((X_test, y_test))
 
+
+###############################################################################
+print("Running simulations...")
+
 with Pool() as pool:
 
     # Run the simulations in parallel
-    print("Running simulations...")
-    scores = pool.starmap(main, params)
+    data = pool.starmap(main, params)
 
     # Save results as a DataFrame
-    params = np.array(list(product(sample_sizes, simulation_names, criteria)))
-    df = np.concatenate((params, scores), axis=1)
-    columns = ["n_samples", "simulation", "criterion", "average", "error"]
-    df = pd.DataFrame(df, columns=columns)
+    columns = ["simulation", "n_samples", "criterion",
+               "n_dimensions", "score", "runtime"]
+    df = pd.DataFrame(data, columns=columns)
     df.to_csv("./results.csv")
 
     # Plot the results
