@@ -306,6 +306,9 @@ Samples generator
    datasets.make_sparse_uncorrelated
    datasets.make_spd_matrix
    datasets.make_swiss_roll
+   datasets.make_log_regression
+   datasets.make_sin_regression
+   datasets.make_square_regression
 
 
 .. _decomposition_ref:
