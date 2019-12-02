@@ -1788,7 +1788,7 @@ def make_sin_regression(n_samples=100, n_dimensions=10, noise=0.0,
         The upper limit of the data matrix.
 
     period : float, optional (default=4*np.pi)
-        The period fo the sinusoid.
+        The period of the sinusoid.
 
     random_state : int, RandomState instance or None (default)
         Determines random number generation for dataset creation. Pass an int
