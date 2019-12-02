@@ -310,6 +310,7 @@ Samples generator
    datasets.make_sin_regression
    datasets.make_square_regression
    datasets.make_multiplicative_noise
+   datasets.make_independent_noise
 
 
 .. _decomposition_ref:
