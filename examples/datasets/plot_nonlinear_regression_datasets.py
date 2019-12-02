@@ -10,7 +10,7 @@ This example illustrates the :func:`datasets.make_log_regression`,
 :func:`datasets.make_independent_noise` functions.
 
 For each, :math:`n = 100` points are sampled with noise to show the actual
-sample data used for one-dimensional relationships (gray dots).
+sample data used for one-dimensional relationships (red dots).
 
 For comparison purposes, :math:`n = 1000` points are sampled without noise to
 highlight each underlying dependency (black dots). Note that only black points
@@ -31,31 +31,34 @@ from sklearn.datasets import (make_independent_noise, make_log_regression,
 def plot_simulation(simulation_name, ax):
 
     # Get simulation function
-    simulation = simulations[simulation_name]
+    sim, noise = simulations[simulation_name]
 
     # Sample noiseless and noisy versions of the data
-    if simulation_name in ["Logarithmic", r"Sine Period $4\pi$", "Square"]:
-        X_pure, y_pure = simulation(n_samples=1000, n_dimensions=1, noise=0)
-        X_noise, y_noise = simulation(n_samples=100, n_dimensions=1, noise=1)
+    if noise is not None:
+        X_pure, y_pure = sim(n_samples=1000, n_dimensions=1, noise=0)
+        X_noise, y_noise = sim(n_samples=100, n_dimensions=1, noise=noise)
     else:
-        X_pure, y_pure = simulation(n_samples=1000, n_dimensions=1)
-        X_noise, y_noise = simulation(n_samples=100, n_dimensions=1)
+        X_pure, y_pure = sim(n_samples=1000, n_dimensions=1)
 
-    # Plot the data points from both data sets
-    ax.scatter(X_pure, y_pure, c="#CCD1D1")
-    ax.scatter(X_noise, y_noise, c="#17202A")
+    # Plot the noiseless and noisy data sets
+    ax.scatter(X_pure, y_pure, s=10, c="#17202A")
+    if noise is not None:
+        ax.scatter(X_noise, y_noise, s=20, c="#E74C3C")
+
+    # Format axis
     ax.set_title(simulation_name)
+    ax.axis("off")
 
 
 simulations = {
-    "Logarithmic": make_log_regression,
-    r"Sine Period $4\pi$": make_sin_regression,
-    "Square": make_square_regression,
-    "Multiplicative": make_multiplicative_noise,
-    "Independence": make_independent_noise,
+    "Logarithmic": (make_log_regression, 3.0),
+    r"Sine Period $4\pi$": (make_sin_regression, 1.0),
+    "Square": (make_square_regression, 1.0),
+    "Multiplicative": (make_multiplicative_noise, None),
+    "Independence": (make_independent_noise, None),
 }
 
-_, axs = plt.subplots(1, 5, sharex='row', sharey='row', figsize=(40, 4))
+_, axs = plt.subplots(1, 5, figsize=(40, 4))
 plt.subplots_adjust(bottom=.15)
 
 for simulation_name, ax in zip(simulations.keys(), axs):
