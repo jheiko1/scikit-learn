@@ -125,17 +125,22 @@ params = product(simulation_names, sample_sizes, criteria)
 
 with Pool() as pool:
 
-    # Run the pools
+    # Run the simulations in parallel
     scores = pool.starmap(main, params)
 
-    # Save data to array
+    # Save results as a DataFrame
+    params = np.array(list(product(sample_sizes, simulation_names, criteria)))
     df = np.concatenate((params, scores), axis=1)
     columns = ["n_samples", "simulation", "criterion", "average", "error"]
     df = pd.DataFrame(df, columns=columns)
-    print(df.head())
+    df.to_csv("./results.csv")
 
-    df.to_csv("./results/sim_noise/results.csv")
-
-# Print runtime
-print("All finished!")
-print("Took {} minutes".format((time.time() - start_time) / 60))
+    # Plot the results
+    sns.relplot(x="n_samples",
+                y="average",
+                hue="criterion",
+                col="simulation",
+                kind="line",
+                data=df,
+                facet_kws={'sharey': False, 'sharex': True})
+    plt.show()
