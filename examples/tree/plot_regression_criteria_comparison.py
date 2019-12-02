@@ -27,6 +27,8 @@ from sklearn.metrics import mean_squared_error
 
 print(__doc__)
 
+random_state = 0
+
 ###############################################################################
 noise = 100.0
 simulations = {
@@ -96,10 +98,12 @@ def main(simulation_name, n_samples, criterion, n_dimensions):
     if noise is not None:
         X_train, y_train = sim(n_samples=n_samples,
                                n_dimensions=n_dimensions,
-                               noise=noise)
+                               noise=noise,
+                               random_state=random_state)
     else:
         X_train, y_train = sim(n_samples=n_samples,
-                               n_dimensions=n_dimensions)
+                               n_dimensions=n_dimensions,
+                               random_state=random_state)
 
     # Train forest
     start = time.time()
@@ -136,10 +140,12 @@ for simulation_name, (sim, noise) in simulations.items():
     if noise is not None:
         X_test, y_test = sim(n_samples=1000,
                              n_dimensions=n_dimensions,
-                             noise=noise)
+                             noise=noise,
+                             random_state=random_state)
     else:
         X_test, y_test = sim(n_samples=1000,
-                             n_dimensions=n_dimensions)
+                             n_dimensions=n_dimensions,
+                             random_state=random_state)
     simulations[simulation_name].append((X_test, y_test))
 
 
