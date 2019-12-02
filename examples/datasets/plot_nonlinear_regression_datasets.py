@@ -19,13 +19,16 @@ are plotted for the :func:`datasets.make_multiplicative_noise`, and
 parameter.
 """
 
-print(__doc__)
+# Author: Vivek Gopalakrishnan <vgopala4@jhu.edu>
+# License: BSD 3 clause
 
 import matplotlib.pyplot as plt
 
 from sklearn.datasets import (make_independent_noise, make_log_regression,
                               make_multiplicative_noise, make_sin_regression,
                               make_square_regression)
+
+print(__doc__)
 
 
 def plot_simulation(simulation_name, ax):
