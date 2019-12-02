@@ -124,6 +124,18 @@ sample_sizes = np.arange(5, 101, 5)
 criteria = ["mae", "mse", "friedman_mse", "axis", "oblique"]
 params = product(simulation_names, sample_sizes, criteria)
 
+# Construct validation datasets
+print("Constructing validation datasets...")
+for simulation_name, (sim, noise) in simulations.items():
+    if noise is not None:
+        X_test, y_test = sim(n_samples=1000,
+                             n_dimensions=n_dimensions,
+                             noise=noise)
+    else:
+        X_test, y_test = sim(n_samples=1000,
+                             n_dimensions=n_dimensions)
+    simulations[simulation_name].append((X_test, y_test))
+
 with Pool() as pool:
 
     # Run the simulations in parallel
