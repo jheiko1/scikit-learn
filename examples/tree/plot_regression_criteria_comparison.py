@@ -10,6 +10,7 @@ For visual examples of these datasets, see
 # Author: Vivek Gopalakrishnan <vgopala4@jhu.edu>
 # License: BSD 3 clause
 
+import time
 from itertools import product, repeat
 from multiprocessing import Pool
 
@@ -101,10 +102,13 @@ def main(simulation_name, n_samples, criterion, n_dimensions):
                                n_dimensions=n_dimensions)
 
     # Train forest
+    start = time.time()
     regr = _train_forest(X_train, y_train, criterion)
+    stop = time.time()
 
     # Evaluate on testing data and record runtime
     score = _test_forest(X_test, y_test, regr)
+    runtime = stop - start
 
     return (simulation_name, n_samples, criterion, n_dimensions, score, runtime)
 
