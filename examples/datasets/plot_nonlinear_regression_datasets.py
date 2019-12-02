@@ -39,7 +39,7 @@ def plot_simulation(simulation_name, ax):
 
     # Plot the data points from both data sets
     ax.scatter(X_pure, y_pure, c="#CCD1D1")
-    ax.scatter(X_noise, y_noise, c="##17202A")
+    ax.scatter(X_noise, y_noise, c="#17202A")
     ax.set_title(simulation_name)
 
 
