@@ -34,8 +34,12 @@ def plot_simulation(simulation_name, ax):
     simulation = simulations[simulation_name]
 
     # Sample noiseless and noisy versions of the data
-    X_pure, y_pure = simulation(n_samples=1000, n_dimensions=1, noise=0)
-    X_noise, y_noise = simulation(n_samples=100, n_dimensions=1, noise=1)
+    if simulation_name in ["Logarithmic", r"Sine Period $4\pi$", "Square"]:
+        X_pure, y_pure = simulation(n_samples=1000, n_dimensions=1, noise=0)
+        X_noise, y_noise = simulation(n_samples=100, n_dimensions=1, noise=1)
+    else:
+        X_pure, y_pure = simulation(n_samples=1000, n_dimensions=1)
+        X_noise, y_noise = simulation(n_samples=100, n_dimensions=1)
 
     # Plot the data points from both data sets
     ax.scatter(X_pure, y_pure, c="#CCD1D1")
