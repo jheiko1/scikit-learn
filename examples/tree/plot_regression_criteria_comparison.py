@@ -38,20 +38,16 @@ simulations = {
 
 
 ###############################################################################
-def train_forest(X, y, criterion):
-    """
-    Fit a RandomForestRegressor with default parameters and specific criterion.
-    """
+def _train_forest(X, y, criterion):
+    """Fit a RandomForestRegressor with default parameters and specific criterion."""
     regr = RandomForestRegressor(
-        n_estimators=500, criterion=criterion, max_features="sqrt")
+        n_estimators=500, criterion=criterion, max_features="sqrt", max_depth=5)
     regr.fit(X, y)
     return regr
 
 
-def test_forest(X, y, regr):
-    """
-    Calculate the accuracy of the model on a heldout set.
-    """
+def _test_forest(X, y, regr):
+    """Calculate the accuracy of the model on a heldout set."""
     y_pred = regr.predict(X)
     return norm(y_pred - y) / len(y)
 
