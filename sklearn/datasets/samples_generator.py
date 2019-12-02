@@ -1814,7 +1814,6 @@ def make_sin_regression(n_samples=100, n_dimensions=10, noise=0.0,
     aux_v = generator.multivariate_normal(mean, cov, n_samples)
 
     X += 0.02 * n_dimensions * aux_v
-    X += generator.uniform(-1, 1)
 
     # Transform the input data
     y = np.sin(period * X)
