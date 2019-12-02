@@ -24,6 +24,7 @@ from libc.math cimport fabs
 
 import numpy as np
 cimport numpy as np
+import random #added by morgan
 np.import_array()
 
 from ._utils cimport rand_int #added by Morgan
@@ -1456,7 +1457,8 @@ cdef class AxisProjection(RegressionCriterion):
         cdef UINT32_t* random_state = &rand_r_state
 
         k = rand_int(0, self.n_outputs, random_state) #TODO is this random state okay?
-
+        #with gil:
+        #    k = random.randint(0, self.n_outputs)
         cdef DOUBLE_t w = 1.0
 
         for p in range(start, end):
@@ -1611,8 +1613,8 @@ cdef class ObliqueProjection(RegressionCriterion):
 
         num_pred = rand_int(1, self.n_outputs+1, random_state) #TODO is this random state okay?
 
-        with gil:
-            print(num_pred)
+        #with gil:
+        #    print(num_pred)
 
         for i in range(num_pred):
             k = rand_int(0, self.n_outputs, random_state)
