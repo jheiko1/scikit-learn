@@ -1923,7 +1923,7 @@ def make_multiplicative_noise(n_samples=100, n_dimensions=10, random_state=None)
     X = generator.multivariate_normal(mean, cov, n_samples)
 
     # Transform the input data
-    u = generator.randn(n_dimensions, 1)
+    u = generator.multivariate_normal(mean, cov, n_samples)
     y = X * u
 
     return X, y
