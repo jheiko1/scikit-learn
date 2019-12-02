@@ -18,12 +18,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from numpy.linalg import norm
 
 from sklearn.datasets import (make_independent_noise, make_log_regression,
                               make_multiplicative_noise, make_sin_regression,
                               make_square_regression)
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
 
 print(__doc__)
 
@@ -50,7 +50,7 @@ def _train_forest(X, y, criterion):
 def _test_forest(X, y, regr):
     """Calculate the accuracy of the model on a heldout set."""
     y_pred = regr.predict(X)
-    return norm(y_pred - y) / len(y)
+    return mean_squared_error(y, y_pred)
 
 
 ###############################################################################
