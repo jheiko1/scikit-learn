@@ -28,7 +28,7 @@ print(__doc__)
 
 ###############################################################################
 n_dimensions = 10
-noise = 10.0
+noise = 100.0
 simulations = {
     "Logarithmic": [make_log_regression, noise],
     r"Sine Period $4\pi$": [make_sin_regression, noise],
@@ -54,7 +54,7 @@ def _test_forest(X, y, regr):
 
 
 ###############################################################################
-def main(simulation_name, n_samples, criterion, n_dimensions=10, n_iter=10):
+def main(simulation_name, n_samples, criterion, n_dimensions=n_dimensions, n_iter=10):
     """Measure the performance of RandomForest under simulation conditions.
 
     Parameters
@@ -76,19 +76,12 @@ def main(simulation_name, n_samples, criterion, n_dimensions=10, n_iter=10):
     (average, error) : np.ndarray
         NumPy array with the average MSE and standard error.
     """
+    print(simulation_name, n_samples)
 
-    sim, noise = simulations[simulation_name]
+    # Get simulation parameters and validation dataset
+    sim, noise, (X_test, y_test) = simulations[simulation_name]
     n_samples = int(n_samples)
     n_dimensions = int(n_dimensions)
-
-    # Make a validation dataset
-    if noise is not None:
-        X_test, y_test = sim(n_samples=1000,
-                             n_dimensions=n_dimensions,
-                             noise=noise)
-    else:
-        X_test, y_test = sim(n_samples=1000,
-                             n_dimensions=n_dimensions)
 
     # For each iteration in `n_iter`, train a forest on a newly sampled
     # training set and save its performance on the validation set
@@ -119,6 +112,8 @@ def main(simulation_name, n_samples, criterion, n_dimensions=10, n_iter=10):
 
 ###############################################################################
 # Construct the parameter space
+print("Constructing parameter space...")
+n_dimensions = 10
 simulation_names = simulations.keys()
 sample_sizes = np.arange(5, 101, 5)
 criteria = ["mae", "mse", "friedman_mse", "axis", "oblique"]
@@ -139,6 +134,7 @@ for simulation_name, (sim, noise) in simulations.items():
 with Pool() as pool:
 
     # Run the simulations in parallel
+    print("Running simulations...")
     scores = pool.starmap(main, params)
 
     # Save results as a DataFrame
