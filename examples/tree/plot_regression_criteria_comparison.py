@@ -117,16 +117,12 @@ def main(simulation_name, n_samples, criterion, n_dimensions=10, n_iter=10):
 
 
 ###############################################################################
-# Start running the simulations
-start_time = time.time()
+# Construct the parameter space
+simulation_names = simulations.keys()
+sample_sizes = np.arange(5, 101, 5)
+criteria = ["mae", "mse", "friedman_mse", "axis", "oblique"]
+params = product(simulation_names, sample_sizes, criteria)
 
-# Save parameter space as a numpy array
-params = product(
-    range(5, 105, 5), simulations.keys(), ["mae", "mse", "friedman_mse"]
-)
-params = np.array(list(params))
-
-# Open multiprocessing
 with Pool() as pool:
 
     # Run the pools
