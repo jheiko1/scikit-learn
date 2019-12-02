@@ -53,7 +53,28 @@ def _test_forest(X, y, regr):
 
 
 ###############################################################################
-def main(simulation_name, n_samples, n_dimensions, criterion, n_iter=10):
+def main(simulation_name, n_samples, criterion, n_dimensions=10, n_iter=10):
+    """Measure the performance of RandomForest under simulation conditions.
+
+    Parameters
+    ----------
+    simulation_name : str
+        Key from `simulations` dictionary.
+    n_samples : int
+        Number of training samples.
+    criterion : string
+        Split criterion used to train forest. Choose from
+        ("mse", "mae", "friedman_mse", "axis", "oblique").
+    n_dimensions : int, optional (default=10)
+        Number of features and targets to sample.
+    n_iter : int, optional (default=10)
+        Number of times to test a given parameter configuration.
+
+    Returns
+    -------
+    (average, error) : np.ndarray
+        NumPy array with the average MSE and standard error.
+    """
 
     sim, noise = simulations[simulation_name]
     n_samples = int(n_samples)
@@ -61,35 +82,38 @@ def main(simulation_name, n_samples, n_dimensions, criterion, n_iter=10):
 
     # Make a validation dataset
     if noise is not None:
-        X_test, y_test = sim(
-            n_samples=1000, n_dimensions=n_dimensions, noise=noise)
+        X_test, y_test = sim(n_samples=1000,
+                             n_dimensions=n_dimensions,
+                             noise=noise)
     else:
-        X_test, y_test = sim(n_samples=1000, n_dimensions=n_dimensions)
+        X_test, y_test = sim(n_samples=1000,
+                             n_dimensions=n_dimensions)
 
-    # Train forests and score them
+    # For each iteration in `n_iter`, train a forest on a newly sampled
+    # training set and save its performance on the validation set
     score = []
     for _ in range(n_iter):
 
         # Sample training data
         if noise is not None:
             X_train, y_train = sim(n_samples=n_samples,
-                                   n_dimensions=n_dimensions, noise=noise)
+                                   n_dimensions=n_dimensions,
+                                   noise=noise)
         else:
             X_train, y_train = sim(n_samples=n_samples,
                                    n_dimensions=n_dimensions)
 
         # Train RandomForest
-        regr = train_forest(X_train, y_train, criterion)
-        forest_score = test_forest(X_test, y_test, regr)
+        regr = _train_forest(X_train, y_train, criterion)
+        forest_score = _test_forest(X_test, y_test, regr)
         score.append(forest_score)
 
     # Calculate average and standard deviation
     score = np.array(score)
     average = score.mean()
     error = score.std() / np.sqrt(n_iter)
-    out = np.array([average, error])
 
-    return out
+    return np.array((average, error))
 
 
 ###############################################################################
