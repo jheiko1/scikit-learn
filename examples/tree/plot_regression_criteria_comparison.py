@@ -27,13 +27,14 @@ from sklearn.ensemble import RandomForestRegressor
 print(__doc__)
 
 ###############################################################################
-NOISE = 10.0
+n_dimensions = 10
+noise = 10.0
 simulations = {
-    "Logarithmic": (make_log_regression, NOISE),
-    r"Sine Period $4\pi$": (make_sin_regression, NOISE),
-    "Square": (make_square_regression, NOISE),
-    "Multiplicative": (make_multiplicative_noise, None),
-    "Independence": (make_independent_noise, None),
+    "Logarithmic": [make_log_regression, noise],
+    r"Sine Period $4\pi$": [make_sin_regression, noise],
+    "Square": [make_square_regression, noise],
+    "Multiplicative": [make_multiplicative_noise, None],
+    "Independence": [make_independent_noise, None],
 }
 
 
