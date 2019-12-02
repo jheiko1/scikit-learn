@@ -309,6 +309,7 @@ Samples generator
    datasets.make_log_regression
    datasets.make_sin_regression
    datasets.make_square_regression
+   datasets.make_multiplicative_noise
 
 
 .. _decomposition_ref:
