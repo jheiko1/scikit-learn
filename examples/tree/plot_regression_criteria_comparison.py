@@ -7,20 +7,24 @@ For visual examples of these datasets, see
 =============================================================
 """
 
-print(__doc__)
+# Author: Vivek Gopalakrishnan <vgopala4@jhu.edu>
+# License: BSD 3 clause
 
-import time
 from itertools import product
 from multiprocessing import Pool
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from numpy.linalg import norm
 
 from sklearn.datasets import (make_independent_noise, make_log_regression,
                               make_multiplicative_noise, make_sin_regression,
                               make_square_regression)
 from sklearn.ensemble import RandomForestRegressor
+
+print(__doc__)
 
 ###############################################################################
 NOISE = 10.0
