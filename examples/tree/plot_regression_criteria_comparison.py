@@ -56,7 +56,7 @@ def _test_forest(X, y, regr):
 
 
 ###############################################################################
-def main(simulation_name, n_samples, criterion, n_dimensions):
+def main(simulation_name, n_samples, criterion, n_dimensions, n_iter):
     """Measure the performance of RandomForest under simulation conditions.
 
     Parameters
@@ -70,6 +70,8 @@ def main(simulation_name, n_samples, criterion, n_dimensions):
         ("mse", "mae", "friedman_mse", "axis", "oblique").
     n_dimensions : int
         Number of features and targets to sample.
+    n_iter : int
+        Ignored.
 
     Returns
     -------
@@ -131,7 +133,7 @@ n_repeats = 10
 
 # Create the parameter space
 params = product(simulation_names, criteria, sample_sizes,
-                 repeat(n_dimensions), repeat=n_repeats)
+                 [n_dimensions], range(n_repeats))
 
 
 ###############################################################################
