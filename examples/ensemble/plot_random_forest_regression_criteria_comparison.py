@@ -113,10 +113,10 @@ def main(simulation_name, n_samples, criterion, n_dimensions, n_iter):
     stop = time.time()
 
     # Evaluate on testing data and record runtime
-    score = _test_forest(X_test, y_test, regr)
+    mse = _test_forest(X_test, y_test, regr)
     runtime = stop - start
 
-    return (simulation_name, n_samples, criterion, n_dimensions, score, runtime)
+    return (simulation_name, n_samples, criterion, n_dimensions, mse, runtime)
 
 
 ###############################################################################
@@ -161,12 +161,12 @@ with Pool() as pool:
 
     # Save results as a DataFrame
     columns = ["simulation", "n_samples", "criterion",
-               "n_dimensions", "score", "runtime"]
+               "n_dimensions", "mse", "runtime"]
     df = pd.DataFrame(data, columns=columns)
 
     # Plot the results
     sns.relplot(x="n_samples",
-                y="score",
+                y="mse",
                 hue="criterion",
                 col="simulation",
                 kind="line",
