@@ -1,10 +1,17 @@
 """
-=============================================================
-Comparing different regression split criteria on toy datasets
+===============================================================================
+Comparing different split criteria for random forest regression on toy datasets
+===============================================================================
+
+An example to compare the different split criteria available for
+:class:`sklearn.ensemble.RandomForestRegressor`.
+
+Metrics used to evaluate these splitters include Mean Squared Error (MSE), a
+measure of distance between the true target (`y_true`) and the predicted output
+(`y_pred`), and runtime.
 
 For visual examples of these datasets, see
 :ref:`sphx_glr_auto_examples_datasets_plot_nonlinear_regression_datasets.py`.
-=============================================================
 """
 
 # Author: Vivek Gopalakrishnan <vgopala4@jhu.edu>
