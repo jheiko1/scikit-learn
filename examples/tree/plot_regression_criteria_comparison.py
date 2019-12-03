@@ -71,7 +71,7 @@ def main(simulation_name, n_samples, criterion, n_dimensions, n_iter):
     n_dimensions : int
         Number of features and targets to sample.
     n_iter : int
-        Ignored.
+        Which repeat of the same simulation parameter we're on. Ignored.
 
     Returns
     -------
@@ -132,7 +132,7 @@ criteria = ["mae", "mse", "friedman_mse", "axis", "oblique"]
 n_repeats = 10
 
 # Create the parameter space
-params = product(simulation_names, criteria, sample_sizes,
+params = product(simulation_names, sample_sizes, criteria,
                  [n_dimensions], range(n_repeats))
 
 
