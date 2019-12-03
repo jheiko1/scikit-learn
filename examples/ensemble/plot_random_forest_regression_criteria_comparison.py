@@ -11,7 +11,7 @@ For visual examples of these datasets, see
 # License: BSD 3 clause
 
 import time
-from itertools import product, repeat
+from itertools import product
 from multiprocessing import Pool
 
 import matplotlib.pyplot as plt
