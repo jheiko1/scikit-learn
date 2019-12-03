@@ -163,11 +163,10 @@ with Pool() as pool:
     columns = ["simulation", "n_samples", "criterion",
                "n_dimensions", "score", "runtime"]
     df = pd.DataFrame(data, columns=columns)
-    df.to_csv("./results.csv")
 
     # Plot the results
     sns.relplot(x="n_samples",
-                y="average",
+                y="score",
                 hue="criterion",
                 col="simulation",
                 kind="line",
