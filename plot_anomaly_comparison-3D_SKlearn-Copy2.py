@@ -27,8 +27,8 @@ which user can adjust the values:
 
 The data has three information dimension, which is followed figure 1 in the paper:
 
-  * Madhyastha, Meghana, et al. "Geodesic Learning via Unsupervised Decision Forests."-
-  arXiv preprint arXiv:1907.02844 (2019).
+  * Madhyastha, Meghana, et al. "Geodesic Learning via Unsupervised
+  Decision Forests." arXiv preprint arXiv:1907.02844 (2019).
 
 There are five dataset:
 
@@ -48,8 +48,9 @@ in this example.
   `y_true` and `y_predict`.
   * `sklearn.metrics.roc_auc_score`: 
   measure the area under receiver operating characteristic (ROC) curve.
-      * `sklearn.metrics.roc_curve`: show the shape of ROC curve and the thresholds.
-      The data on the left of the thresholds are inliers and on the right are outliers.
+      * `sklearn.metrics.roc_curve`: show the shape of ROC curve
+      and the thresholds. The data on the left of the thresholds are inliers 
+      and on the right are outliers.
 
 Result and disscussion
 ---------------------------------
