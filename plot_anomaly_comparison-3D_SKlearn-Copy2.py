@@ -6,18 +6,20 @@ Comparing anomaly detection algorithms for outlier detection on 3D toy datasets
 
 Brief overview
 ---------------------------------
-This example is an extension of anomaly detection comparison from ``sckit-learn 2.7.1``.
-These experiment applied six algorithms on different 3D toy dataset.
-Four algorithms are in sklearn, which are ``sklearn.covariance.EllipticEnvelope``,
-``sklearn.svm.OneClassSVM``, ``sklearn.ensemble.IsolationForest``,
+This example is an extension of anomaly detection comparison 
+from ``sckit-learn 2.7.1``. These experiment applied six algorithms
+on different 3D toy dataset. Four algorithms are in sklearn, which are
+``sklearn.covariance.EllipticEnvelope``,
+``sklearn.svm.OneClassSVM``, ``sklearn.ensemble.IsolationForest``, 
 and ``sklearn.neighbors.LocalOutlierFactor``. 
 The outlier detecting performance is measured using 
-accuracy from `sklearn.metrics.accuracy_score`
+accuracy from `sklearn.metrics.accuracy_score` 
 and AUC score from `sklearn.metrics.roc_auc_score`.
 
 Data simulation
 ---------------------------------
-Here are the dafault parameters of the data set, which user can adjust the values:
+Here are the dafault parameters of the data set,
+which user can adjust the values:
 
   * ``d_noise = 10`` - the number of dimensional noise (uniform noise)
   * ``n_samples = 500`` - the number of sample
@@ -51,9 +53,10 @@ in this example.
 
 Result and disscussion
 ---------------------------------
-``sklearn.covariance.EllipticEnvelope`` shows best result in high ``d_noise = 10``.
-However, since robust covariance create a ellptical envelope for inliers,
-we need more test on an inlier data that is not in a elliptical shape.
+``sklearn.covariance.EllipticEnvelope`` shows best result
+in high ``d_noise = 10``. However, since robust covariance 
+create a ellptical envelope for inliers, we need more test 
+on an inlier data that is not in a elliptical shape.
 """
 # Graphing and calculation packages
 import matplotlib as mpl
