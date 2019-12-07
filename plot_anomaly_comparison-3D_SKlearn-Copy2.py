@@ -6,40 +6,54 @@ Comparing anomaly detection algorithms for outlier detection on 3D toy datasets
 
 Brief overview
 ---------------------------------
-This example is an extension of anomaly detection comparison from ``sckit-learn 2.7.1``. These experiment applied six algorithms on different 3D toy dataset. Four algorithms are in sklearn, which are ``sklearn.covariance.EllipticEnvelope``, ``sklearn.svm.OneClassSVM``, ``sklearn.ensemble.IsolationForest``, and ``sklearn.neighbors.LocalOutlierFactor``. The outlier detecting performance is measured using accuracy from `sklearn.metrics.accuracy_score`and AUC score from `sklearn.metrics.roc_auc_score`.
+This example is an extension of anomaly detection comparison from ``sckit-learn 2.7.1``.
+These experiment applied six algorithms on different 3D toy dataset.
+Four algorithms are in sklearn, which are ``sklearn.covariance.EllipticEnvelope``,
+``sklearn.svm.OneClassSVM``, ``sklearn.ensemble.IsolationForest``,
+and ``sklearn.neighbors.LocalOutlierFactor``. 
+The outlier detecting performance is measured using 
+accuracy from `sklearn.metrics.accuracy_score`
+and AUC score from `sklearn.metrics.roc_auc_score`.
 
-Data simulation 
+Data simulation
 ---------------------------------
 Here are the dafault parameters of the data set, which user can adjust the values:
 
   * ``d_noise = 10`` - the number of dimensional noise (uniform noise)
   * ``n_samples = 500`` - the number of sample
   * ``outlliers_fraction = 0.15`` - ratio of outliers to all sample
-  
+
 The data has three information dimension, which is followed figure 1 in the paper:
-    
-  * Madhyastha, Meghana, et al. "Geodesic Learning via Unsupervised Decision Forests." arXiv preprint arXiv:1907.02844 (2019).
+
+  * Madhyastha, Meghana, et al. "Geodesic Learning via Unsupervised Decision Forests."-
+  arXiv preprint arXiv:1907.02844 (2019).
 
 There are five dataset:
-  
+
   * Linear line
   * Spiral helix
   * Sphere shell
   * Three aligned gaussian mixture
   * Three misaligned gaussian mixture
-  
-  
-Performance measurement 
----------------------------------
-Each algorithm will predict the outliers and inliers using `algorithm.fit(X).predict(X)`. There are two main performance measurement in this example.
-    
-  * `sklearn.metrics.accuracy_score`: measure the match between `y_true` and `y_predict`.
-  * `sklearn.metrics.roc_auc_score`: measure the area under receiver operating characteristic (ROC) curve.
-      * `sklearn.metrics.roc_curve`: show the shape of ROC curve and the thresholds. the data on the left of the thresholds are inliers and on the right are outliers.
 
-Result and disscussion 
+Performance measurement
 ---------------------------------
-``sklearn.covariance.EllipticEnvelope`` shows best result in high ``d_noise = 10``. However, since robust covariance create a ellptical envelope for inliers, we need more test on a misaligned data
+Each algorithm will predict the outliers and inliers using 
+`algorithm.fit(X).predict(X)`. There are two main performance measurement 
+in this example.
+
+  * `sklearn.metrics.accuracy_score`: measure the match between 
+  `y_true` and `y_predict`.
+  * `sklearn.metrics.roc_auc_score`: 
+  measure the area under receiver operating characteristic (ROC) curve.
+      * `sklearn.metrics.roc_curve`: show the shape of ROC curve and the thresholds.
+      The data on the left of the thresholds are inliers and on the right are outliers.
+
+Result and disscussion
+---------------------------------
+``sklearn.covariance.EllipticEnvelope`` shows best result in high ``d_noise = 10``.
+However, since robust covariance create a ellptical envelope for inliers,
+we need more test on an inlier data that is not in a elliptical shape.
 """
 # Graphing and calculation packages
 import matplotlib as mpl
