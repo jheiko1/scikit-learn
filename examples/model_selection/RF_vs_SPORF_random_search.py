@@ -2,7 +2,15 @@
 ============================================================================
 Demonstration of randomized search to compare classifier performance
 ============================================================================
-An important step in classifier performance comparison is hyperparameter optimization.  Here, we specify the classifer models we want to tune and a dictionary of hyperparameter ranges (preferably similar for fairness in comparision) for each classifier.  Then, we find the optimal hyperparameters through a function that uses RandomizedSearchCV and refit the optimized models to obtain accuracies.  We can see clearly in the plot that the optimized models perform better than the default parameter models.  On the dataset we use in this example, car dataset from OpenML-CC18, SPORF also performs better than RF overall. 
+An important step in classifier performance comparison is hyperparameter 
+optimization. Here, we specify the classifer models we want to tune and a 
+dictionary of hyperparameter ranges (preferably similar for fairness in 
+comparision) for each classifier. Then, we find the optimal hyperparameters 
+through a function that uses RandomizedSearchCV and refit the optimized 
+models to obtain accuracies. We can see clearly in the plot that the 
+optimized models perform better than the default parameter models. On the 
+dataset we use in this example, car dataset from OpenML-CC18, SPORF also 
+performs better than RF overall. 
 """
 print(__doc__)
 
