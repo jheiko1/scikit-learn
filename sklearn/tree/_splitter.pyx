@@ -17,8 +17,7 @@
 
 from ._criterion cimport Criterion
 from ._criterion cimport ObliqueProjection
-#from ._criterion cimport AxisProjection
-
+from ._criterion cimport AxisProjection
 from libc.stdlib cimport free
 from libc.stdlib cimport qsort
 from libc.stdlib cimport calloc
@@ -64,7 +63,7 @@ cdef inline void _init_pred_weights(SplitRecord* self, SIZE_t n_outputs, UINT32_
     #    rand_r_state = random_state.randint(0, RAND_R_MAX)
     #cdef UINT32_t* random_state = &rand_r_state
     with gil:
-        if isinstance(criterion, ObliqueProjection): #of AxisProjection
+        if isinstance(criterion, ObliqueProjection):
             num_pred = rand_int(1, n_outputs+1, random_state) #TODO is this random state okay?
 
             for i in range(num_pred):
@@ -73,6 +72,9 @@ cdef inline void _init_pred_weights(SplitRecord* self, SIZE_t n_outputs, UINT32_
                 if a == 0:
                     a -= 1
                 self.pred_weights[k] = a # didn't normalize
+        elif isinstance(criterion, AxisProjection):
+            k = rand_int(0, n_outputs, random_state)
+            self.pred_weights[k] = 1.0
 
 cdef class Splitter:
     """Abstract splitter class.
@@ -257,7 +259,7 @@ cdef class Splitter:
     cdef double node_impurity(self, SplitRecord* split) nogil:
         """Return the impurity of the current node."""
         with gil:
-            if isinstance(self.criterion, ObliqueProjection): #of AxisProjection
+            if isinstance(self.criterion, ObliqueProjection) or isinstance(self.criterion, AxisProjection):
                 _init_pred_weights(split, self.y.shape[1], &self.rand_r_state, self.criterion)
                 with gil: 
                     for i in range(self.y.shape[1]):
@@ -453,7 +455,7 @@ cdef class BestSplitter(BaseDenseSplitter):
                                     (self.criterion.weighted_n_right < min_weight_leaf)):
                                 continue
                             with gil:
-                                if isinstance(self.criterion, ObliqueProjection): #of AxisProjection
+                                if isinstance(self.criterion, ObliqueProjection) or isinstance(self.criterion, AxisProjection):
                                     current_proxy_improvement = self.criterion.proxy_impurity_improvement2(split.pred_weights)
                                 else:
                                     current_proxy_improvement = self.criterion.proxy_impurity_improvement()
@@ -487,7 +489,7 @@ cdef class BestSplitter(BaseDenseSplitter):
             self.criterion.update(best.pos)
             best.improvement = self.criterion.impurity_improvement(impurity)
             with gil: 
-                if isinstance(self.criterion, ObliqueProjection): #of AxisProjection
+                if isinstance(self.criterion, ObliqueProjection) or isinstance(self.criterion, AxisProjection):
                     self.criterion.children_impurity2(&best.impurity_left,
                                                 &best.impurity_right, split.pred_weights)
                 else:
@@ -780,7 +782,7 @@ cdef class RandomSplitter(BaseDenseSplitter):
                             (self.criterion.weighted_n_right < min_weight_leaf)):
                         continue
                     with gil:
-                        if isinstance(self.criterion, ObliqueProjection): #of AxisProjection
+                        if isinstance(self.criterion, ObliqueProjection) or isinstance(self.criterion, AxisProjection):
                             current_proxy_improvement = self.criterion.proxy_impurity_improvement2(split.pred_weights)
                         else:
                             current_proxy_improvement = self.criterion.proxy_impurity_improvement()
@@ -807,7 +809,7 @@ cdef class RandomSplitter(BaseDenseSplitter):
             self.criterion.update(best.pos)
             best.improvement = self.criterion.impurity_improvement(impurity)
             with gil:
-                if isinstance(self.criterion, ObliqueProjection): #of AxisProjection
+                if isinstance(self.criterion, ObliqueProjection) or isinstance(self.criterion, AxisProjection):
                     self.criterion.children_impurity2(&best.impurity_left,
                                                 &best.impurity_right, split.pred_weights)
                 else:
@@ -1336,7 +1338,7 @@ cdef class BestSparseSplitter(BaseSparseSplitter):
                                     (self.criterion.weighted_n_right < min_weight_leaf)):
                                 continue
                             with gil:
-                                if isinstance(self.criterion, ObliqueProjection): #of AxisProjection
+                                if isinstance(self.criterion, ObliqueProjection) or isinstance(self.criterion, AxisProjection):
                                     current_proxy_improvement = self.criterion.proxy_impurity_improvement2(split.pred_weights)
                                 else:
                                     current_proxy_improvement = self.criterion.proxy_impurity_improvement()
@@ -1365,7 +1367,7 @@ cdef class BestSparseSplitter(BaseSparseSplitter):
             self.criterion.update(best.pos)
             best.improvement = self.criterion.impurity_improvement(impurity)
             with gil:
-                if isinstance(self.criterion, ObliqueProjection): #of AxisProjection
+                if isinstance(self.criterion, ObliqueProjection) or isinstance(self.criterion, AxisProjection):
                     self.criterion.children_impurity2(&best.impurity_left,
                                                 &best.impurity_right, split.pred_weights)
                 else:
@@ -1576,7 +1578,7 @@ cdef class RandomSparseSplitter(BaseSparseSplitter):
                             (self.criterion.weighted_n_right < min_weight_leaf)):
                         continue
                     with gil:
-                        if isinstance(self.criterion, ObliqueProjection): #of AxisProjection
+                        if isinstance(self.criterion, ObliqueProjection) or isinstance(self.criterion, AxisProjection):
                             current_proxy_improvement = self.criterion.proxy_impurity_improvement2(split.pred_weights)
                         else:
                             current_proxy_improvement = self.criterion.proxy_impurity_improvement()
@@ -1585,7 +1587,7 @@ cdef class RandomSparseSplitter(BaseSparseSplitter):
                         best_proxy_improvement = current_proxy_improvement
                         current.improvement = self.criterion.impurity_improvement(impurity)
                         with gil:
-                            if isinstance(self.criterion, ObliqueProjection): #of AxisProjection
+                            if isinstance(self.criterion, ObliqueProjection) or isinstance(self.criterion, AxisProjection): 
                                 self.criterion.children_impurity2(&current.impurity_left,
                                                             &current.impurity_right, split.pred_weights)
                             else:
@@ -1606,7 +1608,7 @@ cdef class RandomSparseSplitter(BaseSparseSplitter):
             self.criterion.update(best.pos)
             best.improvement = self.criterion.impurity_improvement(impurity)
             with gil:
-                if isinstance(self.criterion, ObliqueProjection): #of AxisProjection
+                if isinstance(self.criterion, ObliqueProjection) or isinstance(self.criterion, AxisProjection):
                     self.criterion.children_impurity2(&best.impurity_left,
                                                 &best.impurity_right, split.pred_weights)
                 else:

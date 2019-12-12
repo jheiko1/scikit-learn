@@ -1779,7 +1779,7 @@ def test_mae():
     dt_mae.fit(X=[[3], [5], [3], [8], [5]], y=[6, 7, 3, 4, 3])
     assert_array_equal(dt_mae.tree_.impurity, [1.4, 1.5, 4.0 / 3.0])
     assert_array_equal(dt_mae.tree_.value.flat, [4, 4.5, 4.0])
-'''
+
 def test_axis_proj():
     """Check axis projection criterion produces correct results on small toy dataset:
 
@@ -1890,7 +1890,7 @@ def test_axis_proj():
     #assert_array_equal(dt_axis.tree_.value.flat, dt_mse.tree_.value.flat)
     #assert_array_equal(dt_axis.tree_.impurity, [14.0 / 3.0, 4.0, 0.0])
     #assert_array_equal(dt_axis.tree_.value.flat, [5.0, 5.25, 0.0])
-'''
+
 def test_oblique_proj():
     """Check oblique projection criterion produces correct results on small toy dataset:
 
