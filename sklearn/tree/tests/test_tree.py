@@ -151,7 +151,6 @@ for name in DATASETS:
     DATASETS[name]["X_sparse"] = csc_matrix(DATASETS[name]["X"])
 
 
-
 def assert_tree_equal(d, s, message):
     assert s.node_count == d.node_count, (
         "{0}: inequal number of node ({1} != {2})"

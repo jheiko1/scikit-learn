@@ -176,6 +176,7 @@ cdef class DepthFirstTreeBuilder(TreeBuilder):
 
         # Recursive partition (without actual recursion)
         splitter.init(X, y, sample_weight_ptr, X_idx_sorted)
+        
         cdef SIZE_t start
         cdef SIZE_t end
         cdef SIZE_t depth
@@ -227,12 +228,10 @@ cdef class DepthFirstTreeBuilder(TreeBuilder):
                 if first:
                     impurity = splitter.node_impurity(&split)
                     first = 0
-                #with gil: print("isleaf, impurity: ", is_leaf, impurity, min_impurity_split)
                 is_leaf = (is_leaf or
                            (impurity <= min_impurity_split))
 
                 if not is_leaf:
-                    #with gil: print(splitter)
                     splitter.node_split(impurity, &split, &n_constant_features)
                     # If EPSILON=0 in the below comparison, float precision
                     # issues stop splitting, producing trees that are
@@ -254,7 +253,6 @@ cdef class DepthFirstTreeBuilder(TreeBuilder):
                 splitter.node_value(tree.value + node_id * tree.value_stride)
 
                 if not is_leaf:
-
                     # Push right child on stack
                     rc = stack.push(split.pos, end, depth + 1, node_id, 0,
                                     split.impurity_right, n_constant_features)
@@ -451,7 +449,6 @@ cdef class BestFirstTreeBuilder(TreeBuilder):
         else:
             splitter.node_impurity(&split)
         n_node_samples = end - start
-        with gil: print("isleaf...", is_leaf, depth, n_node_samples, weighted_n_node_samples, impurity, min_impurity_split)
         is_leaf = (depth >= self.max_depth or
                    n_node_samples < self.min_samples_split or
                    n_node_samples < 2 * self.min_samples_leaf or
@@ -459,9 +456,7 @@ cdef class BestFirstTreeBuilder(TreeBuilder):
                    impurity <= min_impurity_split)
 
         if not is_leaf:
-            with gil: print('hi 1')
             splitter.node_split(impurity, &split, &n_constant_features)
-            with gil: print('hi 2')
             # If EPSILON=0 in the below comparison, float precision issues stop
             # splitting early, producing trees that are dissimilar to v0.18
             is_leaf = (is_leaf or split.pos >= end or

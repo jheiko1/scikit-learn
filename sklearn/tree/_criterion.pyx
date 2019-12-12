@@ -74,6 +74,7 @@ cdef class Criterion:
             The first sample to be used on this node
         end : SIZE_t
             The last sample used on this node
+            
         """
 
         pass
@@ -746,7 +747,6 @@ cdef class RegressionCriterion(Criterion):
 
         n_samples : SIZE_t
             The total number of samples to fit on
-
         """
 
         # Default values
@@ -782,7 +782,7 @@ cdef class RegressionCriterion(Criterion):
                 self.sum_right == NULL):
             raise MemoryError()
 
-    def __reduce__(self): 
+    def __reduce__(self):
         return (type(self), (self.n_outputs, self.n_samples), self.__getstate__())
 
     cdef int init(self, const DOUBLE_t[:, ::1] y, DOUBLE_t* sample_weight,
