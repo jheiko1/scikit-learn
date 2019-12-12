@@ -448,7 +448,6 @@ cdef class BestFirstTreeBuilder(TreeBuilder):
 
         if is_first:
             impurity = splitter.node_impurity(&split)
-            #with gil: print('hi') #not sure why this is necessary but I get a seg fault if not
         else:
             splitter.node_impurity(&split)
         n_node_samples = end - start

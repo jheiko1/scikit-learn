@@ -45,8 +45,7 @@ from sklearn import datasets
 from sklearn.utils import compute_sample_weight
 
 CLF_CRITERIONS = ("gini", "entropy")
-REG_CRITERIONS = ("mse", "mae", "friedman_mse")#, "axis", "oblique")
-#REG_CRITERIONS = ("mse", "oblique")
+REG_CRITERIONS = ("mse", "mae", "friedman_mse")
 
 CLF_TREES = {
     "DecisionTreeClassifier": DecisionTreeClassifier,
@@ -1867,9 +1866,6 @@ def test_axis_proj():
     dt_mse.fit(X=[[3], [5], [8], [3], [5]], y=[3, 3, 4, 7, 8],
                sample_weight=[0.1, 0.3, 1.0, 0.6, 0.3])
     assert_allclose(dt_axis.tree_.impurity, dt_mse.tree_.impurity)
-    #assert_array_equal(dt_axis.tree_.value.flat, dt_mse.tree_.value.flat)
-    #assert_allclose(dt_axis.tree_.impurity, [7.7 / 2.3, 6.13125 / 1.3, 0.0 / 1.0], rtol=0.6)
-    #assert_array_equal(dt_axis.tree_.value.flat, [5.0, 5.25, 4.0])
 
     # Test axis projection where all sample weights are uniform:
     dt_axis.fit(X=[[3], [5], [8], [3], [5]], y=[[3,3], [3,3], [4,4], [7,7], [8,8]],
@@ -1877,9 +1873,6 @@ def test_axis_proj():
     dt_mse.fit(X=[[3], [5], [8], [3], [5]], y=[3, 3, 4, 7, 8],
                 sample_weight=np.ones(5))
     assert_allclose(dt_axis.tree_.impurity, dt_mse.tree_.impurity)
-    #assert_array_equal(dt_axis.tree_.value.flat, dt_mse.tree_.value.flat)
-    #assert_array_equal(dt_axis.tree_.impurity, [14.0 / 3.0, 4.0, 0.0])
-    #assert_array_equal(dt_axis.tree_.value.flat, [5.0, 5.25, 0.0])
 
     # Test axis projection where a `sample_weight` is not explicitly provided.
     # This is equivalent to providing uniform sample weights, though
@@ -1887,9 +1880,6 @@ def test_axis_proj():
     dt_axis.fit(X=[[3], [5], [8], [3], [5]], y=[[3,3], [3,3], [4,4], [7,7], [8,8]])
     dt_mse.fit(X=[[3], [5], [8], [3], [5]], y=[3, 3, 4, 7, 8])
     assert_allclose(dt_axis.tree_.impurity, dt_mse.tree_.impurity)
-    #assert_array_equal(dt_axis.tree_.value.flat, dt_mse.tree_.value.flat)
-    #assert_array_equal(dt_axis.tree_.impurity, [14.0 / 3.0, 4.0, 0.0])
-    #assert_array_equal(dt_axis.tree_.value.flat, [5.0, 5.25, 0.0])
 
 def test_oblique_proj():
     """Check oblique projection criterion produces correct results on small toy dataset:
@@ -1991,10 +1981,6 @@ def test_oblique_proj():
     except:
         assert_allclose(dt_obliq.tree_.impurity, dt_mse.tree_.impurity)
     
-    #assert_array_equal(dt_axis.tree_.value.flat, dt_mse.tree_.value.flat)
-    #assert_allclose(dt_axis.tree_.impurity, [7.7 / 2.3, 6.13125 / 1.3, 0.0 / 1.0], rtol=0.6)
-    #assert_array_equal(dt_axis.tree_.value.flat, [5.0, 5.25, 4.0])
-    
     # Test axis projection where all sample weights are uniform:
     dt_obliq.fit(X=[[3], [5], [8], [3], [5]], y=[[3,3], [3,3], [4,4], [7,7], [8,8]],
                sample_weight=np.ones(5))
@@ -2005,9 +1991,6 @@ def test_oblique_proj():
     except:
         assert_allclose(dt_obliq.tree_.impurity, dt_mse.tree_.impurity)
     
-    #assert_array_equal(dt_axis.tree_.value.flat, dt_mse.tree_.value.flat)
-    #assert_array_equal(dt_axis.tree_.impurity, [14.0 / 3.0, 4.0, 0.0])
-    #assert_array_equal(dt_axis.tree_.value.flat, [5.0, 5.25, 0.0])
 
     # Test MAE where a `sample_weight` is not explicitly provided.
     # This is equivalent to providing uniform sample weights, though
@@ -2018,9 +2001,6 @@ def test_oblique_proj():
         assert_allclose(dt_obliq.tree_.impurity, dt_mse.tree_.impurity*2)
     except:
         assert_allclose(dt_obliq.tree_.impurity, dt_mse.tree_.impurity)
-    #assert_array_equal(dt_axis.tree_.value.flat, dt_mse.tree_.value.flat)
-    #assert_array_equal(dt_axis.tree_.impurity, [14.0 / 3.0, 4.0, 0.0])
-    #assert_array_equal(dt_axis.tree_.value.flat, [5.0, 5.25, 0.0])
     
 
 def test_criterion_copy():

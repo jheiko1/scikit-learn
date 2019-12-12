@@ -54,17 +54,13 @@ cdef inline void _init_split(SplitRecord* self, SIZE_t start_pos) nogil:
     self.improvement = -INFINITY
 
 cdef inline void _init_pred_weights(SplitRecord* self, SIZE_t n_outputs, UINT32_t* random_state, Criterion criterion) nogil:
-    #cdef UINT32_t rand_r_state
     cdef SIZE_t num_pred 
     cdef SIZE_t a 
     cdef SIZE_t k
     self.pred_weights = <double*> calloc(n_outputs, sizeof(double))
-    #with gil: # is this okay?
-    #    rand_r_state = random_state.randint(0, RAND_R_MAX)
-    #cdef UINT32_t* random_state = &rand_r_state
     with gil:
         if isinstance(criterion, ObliqueProjection):
-            num_pred = rand_int(1, n_outputs+1, random_state) #TODO is this random state okay?
+            num_pred = rand_int(1, n_outputs+1, random_state)
 
             for i in range(num_pred):
                 k = rand_int(0, n_outputs, random_state)
@@ -261,9 +257,6 @@ cdef class Splitter:
         with gil:
             if isinstance(self.criterion, ObliqueProjection) or isinstance(self.criterion, AxisProjection):
                 _init_pred_weights(split, self.y.shape[1], &self.rand_r_state, self.criterion)
-                with gil: 
-                    for i in range(self.y.shape[1]):
-                        pass#print("weight: ", i, split.pred_weights[i])
                 return self.criterion.node_impurity2(split.pred_weights)
             else:
                 return self.criterion.node_impurity()
@@ -359,9 +352,7 @@ cdef class BestSplitter(BaseDenseSplitter):
         cdef SIZE_t n_total_constants = n_known_constants
         cdef DTYPE_t current_feature_value
         cdef SIZE_t partition_end
-        #with gil: print(split.pred_weights[0])
-        _init_split(&best, end)#, self.y.shape[1], random_state, self.criterion)
-        #with gil: print(split.pred_weights[0])
+        _init_split(&best, end)
         # Sample up to max_features without replacement using a
         # Fisher-Yates-based algorithm (using the local variables `f_i` and
         # `f_j` to compute a permutation of the `features` array).
@@ -677,9 +668,7 @@ cdef class RandomSplitter(BaseDenseSplitter):
         cdef DTYPE_t min_feature_value
         cdef DTYPE_t max_feature_value
         cdef DTYPE_t current_feature_value
-        #with gil: print(split.pred_weights[0])
-        _init_split(&best, end)#, self.y.shape[1], random_state, self.criterion)
-        #with gil: print(split.pred_weights[0])
+        _init_split(&best, end)
         # Sample up to max_features without replacement using a
         # Fisher-Yates-based algorithm (using the local variables `f_i` and
         # `f_j` to compute a permutation of the `features` array).
@@ -1190,9 +1179,7 @@ cdef class BestSparseSplitter(BaseSparseSplitter):
         cdef UINT32_t* random_state = &self.rand_r_state
 
         cdef SplitRecord best, current
-        #with gil: print(split.pred_weights[0])
-        _init_split(&best, end)#, self.y.shape[1], random_state, self.criterion)
-        #with gil: print(split.pred_weights[0])
+        _init_split(&best, end)
         cdef double current_proxy_improvement = - INFINITY
         cdef double best_proxy_improvement = - INFINITY
 
@@ -1428,9 +1415,7 @@ cdef class RandomSparseSplitter(BaseSparseSplitter):
         cdef UINT32_t* random_state = &self.rand_r_state
 
         cdef SplitRecord best, current
-        #with gil: print(split.pred_weights[0])
-        _init_split(&best, end)#, self.y.shape[1], random_state, self.criterion)
-        #with gil: print(split.pred_weights[0])
+        _init_split(&best, end)
         cdef double current_proxy_improvement = - INFINITY
         cdef double best_proxy_improvement = - INFINITY
 
