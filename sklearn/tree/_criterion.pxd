@@ -65,6 +65,11 @@ cdef class Criterion:
     cdef double impurity_improvement(self, double impurity) nogil
     cdef double proxy_impurity_improvement(self) nogil
 
+    cdef double node_impurity2(self, double* pred_weights) nogil
+    cdef void children_impurity2(self, double* impurity_left,
+                                double* impurity_right, double* pred_weights) nogil
+    cdef double proxy_impurity_improvement2(self, double* pred_weights) nogil
+
 cdef class ClassificationCriterion(Criterion):
     """Abstract criterion for classification."""
 
@@ -75,4 +80,6 @@ cdef class RegressionCriterion(Criterion):
     """Abstract regression criterion."""
 
     cdef double sq_sum_total
-    cdef object random_state             # Random state
+
+cdef class ObliqueProjection(RegressionCriterion):
+    pass
