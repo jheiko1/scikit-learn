@@ -1778,6 +1778,7 @@ def test_mae():
     assert_array_equal(dt_mae.tree_.impurity, [1.4, 1.5, 4.0 / 3.0])
     assert_array_equal(dt_mae.tree_.value.flat, [4, 4.5, 4.0])
 
+
 def test_criterion_copy():
     # Let's check whether copy of our criterion has the same type
     # and properties as original

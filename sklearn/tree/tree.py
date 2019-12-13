@@ -363,6 +363,7 @@ class BaseDecisionTree(MultiOutputMixin, BaseEstimator, metaclass=ABCMeta):
                                            max_leaf_nodes,
                                            self.min_impurity_decrease,
                                            min_impurity_split)
+
         builder.build(self.tree_, X, y, sample_weight, X_idx_sorted)
 
         if self.n_outputs_ == 1 and is_classifier(self):
@@ -370,7 +371,7 @@ class BaseDecisionTree(MultiOutputMixin, BaseEstimator, metaclass=ABCMeta):
             self.classes_ = self.classes_[0]
 
         self._prune_tree()
-        
+
         return self
 
     def _validate_X_predict(self, X, check_input):
