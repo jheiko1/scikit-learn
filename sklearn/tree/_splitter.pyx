@@ -45,18 +45,21 @@ cdef DTYPE_t FEATURE_THRESHOLD = 1e-7
 # in SparseSplitter
 cdef DTYPE_t EXTRACT_NNZ_SWITCH = 0.1
 
-cdef inline void _init_split(SplitRecord* self, SIZE_t start_pos) nogil:
+cdef inline void _init_split(SplitRecord* self, SIZE_t start_pos, SIZE_t n_outputs, UINT32_t* random_state, Criterion criterion) nogil:
     self.impurity_left = INFINITY
     self.impurity_right = INFINITY
     self.pos = start_pos
     self.feature = 0
     self.threshold = 0.
     self.improvement = -INFINITY
+    if (self.pred_weights):
+        _init_pred_weights(self, n_outputs, random_state, criterion)
 
 cdef inline void _init_pred_weights(SplitRecord* self, SIZE_t n_outputs, UINT32_t* random_state, Criterion criterion) nogil:
     cdef SIZE_t num_pred 
     cdef SIZE_t a 
     cdef SIZE_t k
+    #with gil: __dealloc__(self)
     self.pred_weights = <double*> calloc(n_outputs, sizeof(double))
     with gil:
         if isinstance(criterion, ObliqueProjection):
@@ -71,7 +74,12 @@ cdef inline void _init_pred_weights(SplitRecord* self, SIZE_t n_outputs, UINT32_
         elif isinstance(criterion, AxisProjection):
             k = rand_int(0, n_outputs, random_state)
             self.pred_weights[k] = 1.0
-
+'''
+cdef __dealloc__(SplitRecord* self):
+    if not (self.pred_weights):
+        print("freeeee")
+        free(self.pred_weights)
+'''
 cdef class Splitter:
     """Abstract splitter class.
 
@@ -354,7 +362,7 @@ cdef class BestSplitter(BaseDenseSplitter):
         cdef DTYPE_t current_feature_value
         cdef SIZE_t partition_end
 
-        _init_split(&best, end)
+        _init_split(&best, end, self.y.shape[1], random_state, self.criterion)
 
         # Sample up to max_features without replacement using a
         # Fisher-Yates-based algorithm (using the local variables `f_i` and
@@ -672,7 +680,7 @@ cdef class RandomSplitter(BaseDenseSplitter):
         cdef DTYPE_t max_feature_value
         cdef DTYPE_t current_feature_value
 
-        _init_split(&best, end)
+        _init_split(&best, end, self.y.shape[1], random_state, self.criterion)
 
         # Sample up to max_features without replacement using a
         # Fisher-Yates-based algorithm (using the local variables `f_i` and
@@ -1185,7 +1193,7 @@ cdef class BestSparseSplitter(BaseSparseSplitter):
 
         cdef SplitRecord best, current
 
-        _init_split(&best, end)
+        _init_split(&best, end, self.y.shape[1], random_state, self.criterion)
 
         cdef double current_proxy_improvement = - INFINITY
         cdef double best_proxy_improvement = - INFINITY
@@ -1423,7 +1431,7 @@ cdef class RandomSparseSplitter(BaseSparseSplitter):
 
         cdef SplitRecord best, current
 
-        _init_split(&best, end)
+        _init_split(&best, end, self.y.shape[1], random_state, self.criterion)
 
         cdef double current_proxy_improvement = - INFINITY
         cdef double best_proxy_improvement = - INFINITY

@@ -1388,17 +1388,15 @@ cdef class AxisProjection(RegressionCriterion):
     cdef double node_impurity2(self, double* pred_weights) nogil:
         """Evaluate the impurity of the current node, i.e. the impurity of
            samples[start:end]."""
-
-        cdef double impurity
+        cdef double impurity = 0.0 #TODO
         cdef DOUBLE_t* sample_weight = self.sample_weight
         cdef SIZE_t* samples = self.samples
         cdef SIZE_t end = self.end
         cdef SIZE_t start = self.start
+        cdef double* pred = <double*> calloc(end-start, sizeof(double))
 
-        cdef double* sum_total = self.sum_total
+        cdef double mean_pred = 0.0 #TODO
         cdef DOUBLE_t y_ik
-
-        cdef double sq_sum_total = 0.0
 
         cdef SIZE_t i
         cdef SIZE_t p
@@ -1406,154 +1404,25 @@ cdef class AxisProjection(RegressionCriterion):
 
         cdef DOUBLE_t w = 1.0
 
+
         for p in range(start, end):
             i = samples[p]
             if sample_weight != NULL:
                 w = sample_weight[i]
             for k in range(self.n_outputs):
                 y_ik = self.y[i, k]
-                sq_sum_total += w * y_ik * y_ik * pred_weights[k]
-        with gil:
-            impurity = abs(sq_sum_total / self.weighted_n_node_samples)
-        for k in range(self.n_outputs):
-            impurity -= (sum_total[k] * pred_weights[k]/ self.weighted_n_node_samples)**2.0
-            
-        
+                # sum over all predictors with pred weights
+                pred[p] += y_ik * pred_weights[k] 
+                # sum over all samples to get mean of new predictor
+                mean_pred += pred[p] / (end - start)
+
+        for p in range(start, end):
+            i = samples[p]
+            if sample_weight != NULL:
+                w = sample_weight[i]
+            impurity += (mean_pred - pred[p]) * (mean_pred - pred[p]) * w
+        impurity /= self.weighted_n_node_samples
         return impurity
-        
-
-    cdef double proxy_impurity_improvement2(self, double* pred_weights) nogil:
-        """Compute a proxy of the impurity reduction
-
-        This method is used to speed up the search for the best split.
-        It is a proxy quantity such that the split that maximizes this value
-        also maximizes the impurity improvement. It neglects all constant terms
-        of the impurity decrease for a given split.
-
-        The absolute impurity improvement is only computed by the
-        impurity_improvement method once the best split has been found.
-        """
-        
-        cdef double* sum_left = self.sum_left
-        cdef double* sum_right = self.sum_right
-
-        cdef SIZE_t k
-        cdef double proxy_impurity_left = 0.0
-        cdef double proxy_impurity_right = 0.0
-
-        for k in range(self.n_outputs):
-            proxy_impurity_left += sum_left[k] * sum_left[k] * pred_weights[k]
-            proxy_impurity_right += sum_right[k] * sum_right[k] * pred_weights[k]
-        with gil:
-            return (abs(proxy_impurity_left / self.weighted_n_left) +
-                    abs(proxy_impurity_right / self.weighted_n_right))
-
-    cdef void children_impurity2(self, double* impurity_left,
-                                double* impurity_right, double* pred_weights) nogil:
-        """Evaluate the impurity in children nodes, i.e. the impurity of the
-           left child (samples[start:pos]) and the impurity the right child
-           (samples[pos:end])."""
-    
-        cdef DOUBLE_t* sample_weight = self.sample_weight
-        cdef SIZE_t* samples = self.samples
-        cdef SIZE_t pos = self.pos
-        cdef SIZE_t start = self.start
-        cdef SIZE_t end = self.end
-
-        cdef double* sum_left = self.sum_left
-        cdef double* sum_right = self.sum_right
-        cdef DOUBLE_t y_ik
-
-        cdef double sq_sum_left = 0.0
-        cdef double sq_sum_right = 0.0
-
-        cdef SIZE_t i
-        cdef SIZE_t p
-        cdef SIZE_t k 
-
-        cdef DOUBLE_t w = 1.0
-        for p in range(start, pos):
-            i = samples[p]
-
-            if sample_weight != NULL:
-                w = sample_weight[i]
-            for k in range(self.n_outputs):
-                y_ik = self.y[i, k]
-                sq_sum_left += w * y_ik * y_ik * pred_weights[k]
-
-        for p in range(pos, end):
-            i = samples[p]
-
-            if sample_weight != NULL:
-                w = sample_weight[i]
-            for k in range(self.n_outputs):
-                y_ik = self.y[i, k]
-                sq_sum_right += w * y_ik * y_ik * pred_weights[k]
-        
-        with gil:
-            impurity_left[0] = abs(sq_sum_left / self.weighted_n_left)
-            impurity_right[0] = abs(sq_sum_right / self.weighted_n_right)
-
-        impurity_left[0] -= (sum_left[k] * pred_weights[k]/ self.weighted_n_left) ** 2.0
-        impurity_right[0] -= (sum_right[k] * pred_weights[k]/ self.weighted_n_right) ** 2.0
-
-        impurity_left[0]
-        impurity_right[0]
-        
-
-cdef class ObliqueProjection(RegressionCriterion):
-    r"""Mean squared error impurity criterion 
-        of oblique projections of high dimensional y
-
-        Algorithm:
-            1. select a random predictors from [0,n_outputs]
-            2. Set weights of chosen predictors to -1 or 1
-            3. compute mse on the values of those predictors for all samples
-
-       MSE = var_left + var_right
-    """
-
-    cdef double node_impurity2(self, double* pred_weights) nogil:
-        """Evaluate the impurity of the current node, i.e. the impurity of
-           samples[start:end]."""
-
-        cdef double impurity
-        cdef DOUBLE_t* sample_weight = self.sample_weight
-        cdef SIZE_t* samples = self.samples
-        cdef SIZE_t end = self.end
-        cdef SIZE_t start = self.start
-
-        cdef double* sum_total = self.sum_total 
-        cdef DOUBLE_t y_ik
-
-        cdef double sq_sum_total = 0.0
-
-        cdef SIZE_t i
-        cdef SIZE_t p
-        cdef SIZE_t k 
-
-        cdef DOUBLE_t w = 1.0
-
-        for p in range(start, end):
-            i = samples[p]
-            if sample_weight != NULL:
-                w = sample_weight[i]
-            for k in range(self.n_outputs):
-                y_ik = self.y[i, k]
-                sq_sum_total += w * y_ik * y_ik * pred_weights[k]
-        with gil:
-            impurity = abs(sq_sum_total / self.weighted_n_node_samples)
-        for k in range(self.n_outputs):
-            impurity -= (sum_total[k] * pred_weights[k]/ self.weighted_n_node_samples)**2.0
-            
-
-        cdef SIZE_t num_pred = 0
-        for k in range(self.n_outputs):
-            with gil: 
-                if abs(pred_weights[k]) > 0.5:
-                    num_pred += 1
-
-        return impurity #/ num_pred
         
 
     cdef double proxy_impurity_improvement2(self, double* pred_weights) nogil:
@@ -1580,12 +1449,15 @@ cdef class ObliqueProjection(RegressionCriterion):
         cdef double proxy_impurity_left = 0.0
         cdef double proxy_impurity_right = 0.0
 
-        for k in range(self.n_outputs):
-            proxy_impurity_left += sum_left[k] * sum_left[k] * pred_weights[k]
-            proxy_impurity_right += sum_right[k] * sum_right[k] * pred_weights[k]
         with gil:
-            return (abs(proxy_impurity_left / self.weighted_n_left) +
-                    abs(proxy_impurity_right / self.weighted_n_right))
+            for k in range(self.n_outputs):
+                proxy_impurity_left += sum_left[k] * sum_left[k] * abs(pred_weights[k])
+                proxy_impurity_right += sum_right[k] * sum_right[k] * abs(pred_weights[k])
+        #with gil:
+        #    return (abs(proxy_impurity_left / self.weighted_n_left) +
+        #            abs(proxy_impurity_right / self.weighted_n_right))
+        return (proxy_impurity_left / self.weighted_n_left +
+                proxy_impurity_right / self.weighted_n_right)
 
 
     cdef void children_impurity2(self, double* impurity_left,
@@ -1593,49 +1465,215 @@ cdef class ObliqueProjection(RegressionCriterion):
         """Evaluate the impurity in children nodes, i.e. the impurity of the
            left child (samples[start:pos]) and the impurity the right child
            (samples[pos:end])."""
-
         cdef DOUBLE_t* sample_weight = self.sample_weight
         cdef SIZE_t* samples = self.samples
         cdef SIZE_t pos = self.pos
         cdef SIZE_t start = self.start
         cdef SIZE_t end = self.end
 
-        cdef double* sum_left = self.sum_left
-        cdef double* sum_right = self.sum_right
+        impurity_left[0] = 0.0
+        impurity_right[0] = 0.0
+        cdef double* pred_left = <double*> calloc(pos-start, sizeof(double))
+        cdef double* pred_right = <double*> calloc(end-pos, sizeof(double))
+        cdef double mean_pred_left = 0.0 #TODO
+        cdef double mean_pred_right = 0.0 #TODO
         cdef DOUBLE_t y_ik
-
-        cdef double sq_sum_left = 0.0
-        cdef double sq_sum_right = 0.0
 
         cdef SIZE_t i
         cdef SIZE_t p
         cdef SIZE_t k # modified
 
         cdef DOUBLE_t w = 1.0
+    
         for p in range(start, pos):
             i = samples[p]
-
             if sample_weight != NULL:
                 w = sample_weight[i]
             for k in range(self.n_outputs):
                 y_ik = self.y[i, k]
-                sq_sum_left += w * y_ik * y_ik * pred_weights[k]
-
+                # sum over all predictors with pred weights
+                pred_left[p] += y_ik * pred_weights[k] 
+                # sum over all samples to get mean of new predictor
+                mean_pred_left += pred_left[p] / (pos - start)
+        w = 1.0
+        for p in range(start, pos):
+            i = samples[p]
+            if sample_weight != NULL:
+                w = sample_weight[i]
+            impurity_left[0] += ((mean_pred_left - pred_left[p]) 
+                            * (mean_pred_left - pred_left[p]) * w)/self.weighted_n_left
+        w = 1.0
         for p in range(pos, end):
             i = samples[p]
-
             if sample_weight != NULL:
                 w = sample_weight[i]
             for k in range(self.n_outputs):
                 y_ik = self.y[i, k]
-                sq_sum_right += w * y_ik * y_ik * pred_weights[k]
+                # sum over all predictors with pred weights
+                pred_right[p - pos] += y_ik * pred_weights[k] 
+                # sum over all samples to get mean of new predictor
+        for p in range(pos, end):
+            mean_pred_right += pred_right[p-pos] / (end - pos)
+
+        w = 1.0
+        for p in range(pos, end):
+            i = samples[p]
+            if sample_weight != NULL:
+                w = sample_weight[i]
+            impurity_right[0] += ((mean_pred_right - pred_right[p - pos]) * (mean_pred_right - pred_right[p-pos]) * w) / self.weighted_n_right
+    
+        impurity_left[0]
+        impurity_right[0]
         
+
+cdef class ObliqueProjection(RegressionCriterion):
+    r"""Mean squared error impurity criterion 
+        of oblique projections of high dimensional y
+
+        Algorithm:
+            1. select a random predictors from [0,n_outputs]
+            2. Set weights of chosen predictors to -1 or 1
+            3. compute mse on the values of those predictors for all samples
+
+       MSE = var_left + var_right
+    """
+
+    cdef double node_impurity2(self, double* pred_weights) nogil:
+        """Evaluate the impurity of the current node, i.e. the impurity of
+           samples[start:end]."""
+        cdef double impurity = 0.0 #TODO
+        cdef DOUBLE_t* sample_weight = self.sample_weight
+        cdef SIZE_t* samples = self.samples
+        cdef SIZE_t end = self.end
+        cdef SIZE_t start = self.start
+        cdef double* pred = <double*> calloc(end-start, sizeof(double))
+
+        cdef double mean_pred = 0.0 #TODO
+        cdef DOUBLE_t y_ik
+
+        cdef SIZE_t i
+        cdef SIZE_t p
+        cdef SIZE_t k 
+
+        cdef DOUBLE_t w = 1.0
+
+
+        for p in range(start, end):
+            i = samples[p]
+            if sample_weight != NULL:
+                w = sample_weight[i]
+            for k in range(self.n_outputs):
+                y_ik = self.y[i, k]
+                # sum over all predictors with pred weights
+                pred[p] += y_ik * pred_weights[k] 
+                # sum over all samples to get mean of new predictor
+                mean_pred += pred[p] / (end - start)
+
+        for p in range(start, end):
+            i = samples[p]
+            if sample_weight != NULL:
+                w = sample_weight[i]
+            impurity += (mean_pred - pred[p]) * (mean_pred - pred[p]) * w
+        impurity /= self.weighted_n_node_samples
+        return impurity
+        
+
+    cdef double proxy_impurity_improvement2(self, double* pred_weights) nogil:
+        """Compute a proxy of the impurity reduction
+
+        This method is used to speed up the search for the best split.
+        It is a proxy quantity such that the split that maximizes this value
+        also maximizes the impurity improvement. It neglects all constant terms
+        of the impurity decrease for a given split.
+
+        The absolute impurity improvement is only computed by the
+        impurity_improvement method once the best split has been found.
+        """
+        '''
+        cdef SIZE_t i
         with gil:
-            impurity_left[0] = abs(sq_sum_left / self.weighted_n_left)
-            impurity_right[0] = abs(sq_sum_right / self.weighted_n_right)
+            for i in range(self.n_outputs):
+                print("proxy weights: ", pred_weights[i])
+        '''
+        cdef double* sum_left = self.sum_left
+        cdef double* sum_right = self.sum_right
 
-        impurity_left[0] -= (sum_left[k] * pred_weights[k]/ self.weighted_n_left) ** 2.0
-        impurity_right[0] -= (sum_right[k] * pred_weights[k]/ self.weighted_n_right) ** 2.0
+        cdef SIZE_t k
+        cdef double proxy_impurity_left = 0.0
+        cdef double proxy_impurity_right = 0.0
 
+        with gil:
+            for k in range(self.n_outputs):
+                proxy_impurity_left += sum_left[k] * sum_left[k] * abs(pred_weights[k])
+                proxy_impurity_right += sum_right[k] * sum_right[k] * abs(pred_weights[k])
+        #with gil:
+        #    return (abs(proxy_impurity_left / self.weighted_n_left) +
+        #            abs(proxy_impurity_right / self.weighted_n_right))
+        return (proxy_impurity_left / self.weighted_n_left +
+                proxy_impurity_right / self.weighted_n_right)
+
+
+    cdef void children_impurity2(self, double* impurity_left,
+                                double* impurity_right, double* pred_weights) nogil:
+        """Evaluate the impurity in children nodes, i.e. the impurity of the
+           left child (samples[start:pos]) and the impurity the right child
+           (samples[pos:end])."""
+        cdef DOUBLE_t* sample_weight = self.sample_weight
+        cdef SIZE_t* samples = self.samples
+        cdef SIZE_t pos = self.pos
+        cdef SIZE_t start = self.start
+        cdef SIZE_t end = self.end
+
+        impurity_left[0] = 0.0
+        impurity_right[0] = 0.0
+        cdef double* pred_left = <double*> calloc(pos-start, sizeof(double))
+        cdef double* pred_right = <double*> calloc(end-pos, sizeof(double))
+        cdef double mean_pred_left = 0.0 #TODO
+        cdef double mean_pred_right = 0.0 #TODO
+        cdef DOUBLE_t y_ik
+
+        cdef SIZE_t i
+        cdef SIZE_t p
+        cdef SIZE_t k # modified
+
+        cdef DOUBLE_t w = 1.0
+    
+        for p in range(start, pos):
+            i = samples[p]
+            if sample_weight != NULL:
+                w = sample_weight[i]
+            for k in range(self.n_outputs):
+                y_ik = self.y[i, k]
+                # sum over all predictors with pred weights
+                pred_left[p] += y_ik * pred_weights[k] 
+                # sum over all samples to get mean of new predictor
+                mean_pred_left += pred_left[p] / (pos - start)
+        w = 1.0
+        for p in range(start, pos):
+            i = samples[p]
+            if sample_weight != NULL:
+                w = sample_weight[i]
+            impurity_left[0] += ((mean_pred_left - pred_left[p]) 
+                            * (mean_pred_left - pred_left[p]) * w)/self.weighted_n_left
+        w = 1.0
+        for p in range(pos, end):
+            i = samples[p]
+            if sample_weight != NULL:
+                w = sample_weight[i]
+            for k in range(self.n_outputs):
+                y_ik = self.y[i, k]
+                # sum over all predictors with pred weights
+                pred_right[p - pos] += y_ik * pred_weights[k] 
+                # sum over all samples to get mean of new predictor
+        for p in range(pos, end):
+            mean_pred_right += pred_right[p-pos] / (end - pos)
+
+        w = 1.0
+        for p in range(pos, end):
+            i = samples[p]
+            if sample_weight != NULL:
+                w = sample_weight[i]
+            impurity_right[0] += ((mean_pred_right - pred_right[p - pos]) * (mean_pred_right - pred_right[p-pos]) * w) / self.weighted_n_right
+    
         impurity_left[0]
         impurity_right[0]
