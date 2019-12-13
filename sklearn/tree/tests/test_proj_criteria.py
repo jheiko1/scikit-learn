@@ -222,11 +222,9 @@ def test_oblique_proj():
         except: 
                 assert_allclose(dt_obliq.tree_.impurity, [0.0, 0.0, 0.0], rtol=0.6)
        
-#def test():
-    #print("hi")
 
 if __name__=="__main__":
     test_axis_proj()
-    print("axis passed")
+    print("axis passed!")
     test_oblique_proj()
-    print("oblique passed")
+    print("oblique passed!")
