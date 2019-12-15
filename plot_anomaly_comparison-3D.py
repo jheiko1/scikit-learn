@@ -255,7 +255,7 @@ for i_dataset3D, X in enumerate(datasets3D):
     X_noise = make_blobs(
         n_samples=n_samples,
         centers=1,
-        n_features=2,
+        n_features=d_noise,
         random_state=0,
         cluster_std=1,
         center_box=(0.0, 0.0),
