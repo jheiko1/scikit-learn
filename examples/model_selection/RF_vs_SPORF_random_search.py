@@ -14,6 +14,7 @@ performs better than RF overall.
 """
 print(__doc__)
 
+from myconfig import api_key
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import GridSearchCV
 
@@ -85,7 +86,7 @@ def hyperparameter_optimization_random(X, y, *argv):
 
 # get some data
 task_id = 146821  # car
-openml.config.apikey = "c9ea8896542dd998ea42685f14e2bc14"
+openml.config.apikey = api_key
 benchmark_suite = openml.study.get_suite("OpenML-CC18")
 task = openml.tasks.get_task(task_id)
 X, y = task.get_X_and_y()
