@@ -76,18 +76,18 @@ in this example.
 Result and disscussion
 ---------------------------------
 The figures show the outlier detection performance and visualization. 
-Each row represent different datasets. The first four columns compare 
+Each row represents different datasets. The first four columns compare 
 each algorithm the computation time (``.__ s``) and 
 outlier prediction accuracy (``acc``). 
 The number and name of each outlier detection algorithm are on 
-the top of the columns. The last column plots all four algorithms in 
+the top of the column. The last column plots all four algorithms in 
 the ROC curve compare AUC score. The number label on AUC score matches 
 the number in front of the algorithm names. The ``x`` in the ROC curves 
 indicate the thresholds where algorithms start to classify data as outliers.
 
 From the plots, ``sklearn.covariance.EllipticEnvelope`` shows best result 
 in high dimensional noise ``d_noise = 10``. 
-However, since robust covariance create a ellptical envelope for inliers, 
+However, since robust covariance creates a ellptical envelope for inliers, 
 we need more test on an inlier data that is not in a elliptical shape.
 """
 
