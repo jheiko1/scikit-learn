@@ -170,6 +170,7 @@ with Pool() as pool:
     columns = ["simulation", "n_samples", "criterion",
                "n_dimensions", "mse", "runtime"]
     df = pd.DataFrame(data, columns=columns)
+    df.to_csv("../../notebooks/results.csv")
 
     # Plot the results
     sns.relplot(x="n_samples",
