@@ -75,3 +75,4 @@ cdef class RegressionCriterion(Criterion):
     """Abstract regression criterion."""
 
     cdef double sq_sum_total
+    cdef object random_state         # Random state for predictor weights (Projection-Based Splitters)

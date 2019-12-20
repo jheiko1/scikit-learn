@@ -45,7 +45,7 @@ from sklearn import datasets
 from sklearn.utils import compute_sample_weight
 
 CLF_CRITERIONS = ("gini", "entropy")
-REG_CRITERIONS = ("mse", "mae", "friedman_mse")
+REG_CRITERIONS = ("mse", "mae", "friedman_mse", "axis", "oblique")
 
 CLF_TREES = {
     "DecisionTreeClassifier": DecisionTreeClassifier,
@@ -260,11 +260,12 @@ def test_iris():
             "Failed with {0}, criterion = {1} and score = {2}"
             "".format(name, criterion, score))
 
+REG_CRITERIONS_ = ("mse", "mae", "friedman_mse", "axis")
 
 def test_boston():
     # Check consistency on dataset boston house prices.
 
-    for (name, Tree), criterion in product(REG_TREES.items(), REG_CRITERIONS):
+    for (name, Tree), criterion in product(REG_TREES.items(), REG_CRITERIONS_):
         reg = Tree(criterion=criterion, random_state=0)
         reg.fit(boston.data, boston.target)
         score = mean_squared_error(boston.target, reg.predict(boston.data))
@@ -280,7 +281,6 @@ def test_boston():
         assert score < 2, (
             "Failed with {0}, criterion = {1} and score = {2}"
             "".format(name, criterion, score))
-
 
 def test_probability():
     # Predict probabilities using DecisionTreeClassifier.
@@ -1777,6 +1777,112 @@ def test_mae():
     dt_mae.fit(X=[[3], [5], [3], [8], [5]], y=[6, 7, 3, 4, 3])
     assert_array_equal(dt_mae.tree_.impurity, [1.4, 1.5, 4.0 / 3.0])
     assert_array_equal(dt_mae.tree_.value.flat, [4, 4.5, 4.0])
+
+def test_axis_proj():
+    """Check axis projection criterion produces correct results on 
+    small toy dataset:
+
+    ------------------
+    | X | y1  y2  | weight |
+    ------------------
+    | 3 |  3   3  |  0.1   |
+    | 5 |  3   3  |  0.3   |
+    | 8 |  4   4  |  1.0   |
+    | 3 |  7   7  |  0.6   |
+    | 5 |  8   8  |  0.3   |
+    ------------------
+    """
+    dt_axis = DecisionTreeRegressor(random_state=0, criterion="axis",
+                                   max_leaf_nodes=2)
+    dt_mse = DecisionTreeRegressor(random_state=0, criterion="mse",
+                                   max_leaf_nodes=2)
+
+    # Test axis projection where sample weights are non-uniform (as illustrated above):
+    dt_axis.fit(X=[[3], [5], [8], [3], [5]], y=[[3], [3], [4], [7], [8]],
+               sample_weight=[0.1, 0.3, 1.0, 0.6, 0.3])
+    dt_mse.fit(X=[[3], [5], [8], [3], [5]], y=[3, 3, 4, 7, 8],
+               sample_weight=[0.1, 0.3, 1.0, 0.6, 0.3])
+    assert(abs(dt_mse.tree_.impurity[0] - dt_axis.tree_.impurity[0]) < 0.01)
+    assert(abs(dt_mse.tree_.impurity[1] - dt_axis.tree_.impurity[1]) < 0.01) 
+    assert(abs(dt_axis.tree_.impurity[2]) < 0.01)
+
+    # Test axis projection where all sample weights are uniform:
+    dt_axis.fit(X=[[3], [5], [8], [3], [5]], y=[[3,3], [3,3], [4,4], [7,7], [8,8]],
+               sample_weight=np.ones(5))
+    dt_mse.fit(X=[[3], [5], [8], [3], [5]], y=[3, 3, 4, 7, 8],
+                sample_weight=np.ones(5))
+    assert(abs(dt_mse.tree_.impurity[0] - dt_axis.tree_.impurity[0]) < 0.01)
+    assert(abs(dt_mse.tree_.impurity[1] - dt_axis.tree_.impurity[1]) < 0.01) 
+    assert(abs(dt_axis.tree_.impurity[2]) < 0.01)
+
+    # Test axis projections where a `sample_weight` is not explicitly provided.
+    # This is equivalent to providing uniform sample weights, though
+    # the internal logic is different:
+    dt_axis.fit(X=[[3], [5], [8], [3], [5]], y=[[3,3], [3,3], [4,4], [7,7], [8,8]])
+    dt_mse.fit(X=[[3], [5], [8], [3], [5]], y=[3, 3, 4, 7, 8])
+    assert(abs(dt_mse.tree_.impurity[0] - dt_axis.tree_.impurity[0]) < 0.01)
+    assert(abs(dt_mse.tree_.impurity[1] - dt_axis.tree_.impurity[1]) < 0.01) 
+    assert(abs(dt_axis.tree_.impurity[2]) < 0.01)
+
+def test_oblique_proj():
+    """Check oblique projection criterion produces correct results on 
+    small toy dataset
+    
+    ------------------
+    | X | y1  y2  | weight |
+    ------------------
+    | 3 |  3   3  |  0.1   |
+    | 5 |  3   3  |  0.3   |
+    | 8 |  4   4  |  1.0   |
+    | 3 |  7   7  |  0.6   |
+    | 5 |  8   8  |  0.3   |
+    ------------------
+    """
+    dt_oblique = DecisionTreeRegressor(random_state=3, criterion="oblique",
+                                   max_leaf_nodes=2)
+    dt_mse = DecisionTreeRegressor(random_state=3, criterion="mse",
+                                   max_leaf_nodes=2)
+
+    # Test oblique projection where sample weights are non-uniform (as illustrated above):
+    dt_oblique.fit(X=[[3], [5], [8], [3], [5]], y=[[3, 3], [3, 3], [4, 4], [7, 7], [8, 8]],
+               sample_weight=[0.1, 0.3, 1.0, 0.6, 0.3])
+
+    dt_mse.fit(X=[[3], [5], [8], [3], [5]], y=[3, 3, 4, 7, 8],
+               sample_weight=[0.1, 0.3, 1.0, 0.6, 0.3])
+
+    assert(abs(dt_mse.tree_.impurity[0] - dt_oblique.tree_.impurity[0]) < 0.01 
+        or abs(2.0 * dt_mse.tree_.impurity[0] - dt_oblique.tree_.impurity[0]) < 0.01 
+        or abs(dt_oblique.tree_.impurity[0]) < 0.01)
+    assert(abs(dt_mse.tree_.impurity[1] - dt_oblique.tree_.impurity[1]) < 0.01 
+        or abs(2.0 * dt_mse.tree_.impurity[1]- dt_oblique.tree_.impurity[1]) < 0.01 
+        or abs(dt_oblique.tree_.impurity[1]) < 0.01)
+    assert(abs(dt_oblique.tree_.impurity[2]) < 0.01)
+
+    # Test oblique projection where all sample weights are uniform:
+    dt_oblique.fit(X=[[3], [5], [8], [3], [5]], y=[[3,3], [3,3], [4,4], [7,7], [8,8]],
+               sample_weight=np.ones(5))
+    dt_mse.fit(X=[[3], [5], [8], [3], [5]], y=[3, 3, 4, 7, 8],
+               sample_weight=np.ones(5))
+    assert(abs(dt_mse.tree_.impurity[0] - dt_oblique.tree_.impurity[0]) < 0.01 
+        or abs(2.0 * dt_mse.tree_.impurity[0] - dt_oblique.tree_.impurity[0]) < 0.01 
+        or abs(dt_oblique.tree_.impurity[0]) < 0.01)
+    assert(abs(dt_mse.tree_.impurity[1] - dt_oblique.tree_.impurity[1]) < 0.01 
+        or abs(2.0 * dt_mse.tree_.impurity[1]- dt_oblique.tree_.impurity[1]) < 0.01 
+        or abs(dt_oblique.tree_.impurity[1]) < 0.01)
+    assert(abs(dt_oblique.tree_.impurity[2]) < 0.01)
+
+    # Test oblique projections where a `sample_weight` is not explicitly provided.
+    # This is equivalent to providing uniform sample weights, though
+    # the internal logic is different:
+    dt_oblique.fit(X=[[3], [5], [8], [3], [5]], y=[[3,3], [3,3], [4,4], [7,7], [8,8]])
+    dt_mse.fit(X=[[3], [5], [8], [3], [5]], y=[3, 3, 4, 7, 8])
+    assert(abs(dt_mse.tree_.impurity[0] - dt_oblique.tree_.impurity[0]) < 0.01 
+        or abs(2.0 * dt_mse.tree_.impurity[0] - dt_oblique.tree_.impurity[0]) < 0.01 
+        or abs(dt_oblique.tree_.impurity[0]) < 0.01)
+    assert(abs(dt_mse.tree_.impurity[1] - dt_oblique.tree_.impurity[1]) < 0.01 
+        or abs(2.0 * dt_mse.tree_.impurity[1]- dt_oblique.tree_.impurity[1]) < 0.01 
+        or abs(dt_oblique.tree_.impurity[1]) < 0.01)
+    assert(abs(dt_oblique.tree_.impurity[2]) < 0.01)
 
 
 def test_criterion_copy():
