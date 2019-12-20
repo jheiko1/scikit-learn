@@ -8,9 +8,9 @@ dictionary of hyperparameter ranges (preferably similar for fairness in
 comparision) for each classifier. Then, we find the optimal hyperparameters 
 through a function that uses RandomizedSearchCV and refit the optimized 
 models to obtain accuracies. We can see clearly in the plot that the 
-optimized models perform better than the default parameter models. On the 
-dataset we use in this example, car dataset from OpenML-CC18, SPORF also 
-performs better than RF overall. 
+optimized models perform better than or similar to the default parameter 
+models. On the dataset we use in this example, car dataset from OpenML-CC18, 
+SPORF also performs better than RF overall. 
 """
 print(__doc__)
 
@@ -18,18 +18,18 @@ from myconfig import api_key
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import GridSearchCV
 
+import pandas as pd
 import numpy as np
 import math
 from rerf.rerfClassifier import rerfClassifier
 from sklearn.ensemble import RandomForestClassifier
-import openml
+from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 from warnings import simplefilter
 
 simplefilter(action="ignore", category=FutureWarning)
 from warnings import simplefilter
-
 simplefilter(action="ignore", category=FutureWarning)
 
 import matplotlib
@@ -85,11 +85,9 @@ def hyperparameter_optimization_random(X, y, *argv):
 #
 
 # get some data
-task_id = 146821  # car
-openml.config.apikey = api_key
-benchmark_suite = openml.study.get_suite("OpenML-CC18")
-task = openml.tasks.get_task(task_id)
-X, y = task.get_X_and_y()
+X, y = fetch_openml(data_id=40975, return_X_y=True, as_frame=True) #car dataset
+y = pd.factorize(y)[0]
+X = X.apply(lambda x: pd.factorize(x)[0])
 n_features = np.shape(X)[1]
 n_samples = np.shape(X)[0]
 
