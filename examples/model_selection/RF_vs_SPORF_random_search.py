@@ -14,9 +14,7 @@ SPORF also performs better than RF overall.
 """
 print(__doc__)
 
-from myconfig import api_key
 from sklearn.model_selection import RandomizedSearchCV
-from sklearn.model_selection import GridSearchCV
 
 import pandas as pd
 import numpy as np
@@ -27,14 +25,12 @@ from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 from warnings import simplefilter
-
 simplefilter(action="ignore", category=FutureWarning)
 from warnings import simplefilter
 simplefilter(action="ignore", category=FutureWarning)
 
 import matplotlib
 import matplotlib.pyplot as plt
-import numpy as np
 
 
 def hyperparameter_optimization_random(X, y, *argv):
