@@ -25,7 +25,7 @@ from .openml import fetch_openml
 from .samples_generator import make_classification
 from .samples_generator import make_multilabel_classification
 from .samples_generator import make_hastie_10_2
-from .samples_generator import make_regression
+from .samples_generator import make_linear_regression
 from .samples_generator import make_blobs
 from .samples_generator import make_moons
 from .samples_generator import make_circles
@@ -42,6 +42,11 @@ from .samples_generator import make_sparse_spd_matrix
 from .samples_generator import make_gaussian_quantiles
 from .samples_generator import make_biclusters
 from .samples_generator import make_checkerboard
+from .samples_generator import make_log_regression
+from .samples_generator import make_sin_regression
+from .samples_generator import make_square_regression
+from .samples_generator import make_multiplicative_noise
+from .samples_generator import make_independent_noise
 from .svmlight_format import load_svmlight_file
 from .svmlight_format import load_svmlight_files
 from .svmlight_format import dump_svmlight_file
@@ -90,7 +95,7 @@ __all__ = ['clear_data_home',
            'make_low_rank_matrix',
            'make_moons',
            'make_multilabel_classification',
-           'make_regression',
+           'make_linear_regression',
            'make_s_curve',
            'make_sparse_coded_signal',
            'make_sparse_spd_matrix',
