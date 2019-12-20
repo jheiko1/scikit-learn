@@ -1779,7 +1779,8 @@ def test_mae():
     assert_array_equal(dt_mae.tree_.value.flat, [4, 4.5, 4.0])
 
 def test_axis_proj():
-    """Check axis projection criterion produces correct results on small toy dataset:
+    """Check axis projection criterion produces correct results on 
+    small toy dataset:
 
     ------------------
     | X | y1  y2  | weight |
@@ -1790,204 +1791,83 @@ def test_axis_proj():
     | 3 |  7   7  |  0.6   |
     | 5 |  8   8  |  0.3   |
     ------------------
-    |sum wt:|  2.3   |
-    ------------------
- 
-    Mean1 = 5
-    Mean2 = 5
-
-    For all the samples, we can get the total error by summing:
-    (Mean1 - y1)^2 * weight or (Mean2 - y2)^2 * weight
-
-    I.e., total error = (5 - 3)^2 * 0.1)
-                      + (5 - 3)^2 * 0.3)
-                      + (5 - 4)^2 * 1.0)
-                      + (5 - 7)^2 * 0.6)
-                      + (5 - 8)^2 * 0.3)
-                      = 0.4 + 1.2 + 1.0 + 2.4 + 2.7
-                      = 7.7
-
-    Impurity = Total error / total weight
-             = 7.7 / 2.3
-             = 3.3478260869565
-             -----------------
-
-    From this root node, the next best split is between X values of 5 and 8.
-    Thus, we have left and right child nodes:
-
-    LEFT                        RIGHT
-    -----------------------     -----------------------
-    | X | y1  y2  | weight |    | X | y1  y2  | weight |
-    -----------------------     -----------------------
-    | 3 |  3   3  |  0.1   |    | 8 |  4   4  |  1.0   |
-    | 3 |  7   7  |  0.6   |    -----------------------
-    | 5 |  3   3  |  0.3   |    |sum wt:|  1.0         |
-    | 5 |  8   8  |  0.3   |    -----------------------
-    -----------------------
-    |sum wt:|  1.3         |
-    -----------------------
-
-    5.0625 + 3.0625 + 5.0625 + 7.5625 / 4  + 0 = 5.1875
-    4 + 4.667 = 8.667
-
-    Impurity is found in the same way:
-    Left node Mean1 = Mean2 = 5.25
-    Total error = ((5.25 - 3)^2 * 0.1)
-                + ((5.25 - 7)^2 * 0.6)
-                + ((5.25 - 3)^2 * 0.3)
-                + ((5.25 - 8)^2 * 0.3)
-                = 6.13125
-
-    Left Impurity = Total error / total weight
-            = 6.13125 / 1.3
-            = 4.716346153846154
-            -------------------
-
-    Likewise for Right node:
-    Right node Mean1 = Mean2 = 4
-    Total error = ((4 - 4)^2 * 1.0)
-                = 0
-
-    Right Impurity = Total error / total weight
-            = 0 / 1.0
-            = 0.0
-            ------
     """
     dt_axis = DecisionTreeRegressor(random_state=0, criterion="axis",
                                    max_leaf_nodes=2)
+    dt_mse = DecisionTreeRegressor(random_state=0, criterion="mse",
+                                   max_leaf_nodes=2)
+
     # Test axis projection where sample weights are non-uniform (as illustrated above):
     dt_axis.fit(X=[[3], [5], [8], [3], [5]], y=[[3], [3], [4], [7], [8]],
                sample_weight=[0.1, 0.3, 1.0, 0.6, 0.3])
-    assert(abs(7.7 / 2.3 - dt_axis.tree_.impurity[0]) < 0.01)
-    assert(abs(6.13125 / 1.3 - dt_axis.tree_.impurity[1]) < 0.01) 
+    dt_mse.fit(X=[[3], [5], [8], [3], [5]], y=[3, 3, 4, 7, 8],
+               sample_weight=[0.1, 0.3, 1.0, 0.6, 0.3])
+    assert(abs(dt_mse.tree_.impurity[0] - dt_axis.tree_.impurity[0]) < 0.01)
+    assert(abs(dt_mse.tree_.impurity[1] - dt_axis.tree_.impurity[1]) < 0.01) 
     assert(abs(dt_axis.tree_.impurity[2]) < 0.01)
 
     # Test axis projection where all sample weights are uniform:
     dt_axis.fit(X=[[3], [5], [8], [3], [5]], y=[[3,3], [3,3], [4,4], [7,7], [8,8]],
                sample_weight=np.ones(5))
-    assert(abs(22.0 / 5.0 - dt_axis.tree_.impurity[0]) < 0.01)
-    assert(abs(20.75 / 4.0 - dt_axis.tree_.impurity[1]) < 0.01) 
+    dt_mse.fit(X=[[3], [5], [8], [3], [5]], y=[3, 3, 4, 7, 8],
+                sample_weight=np.ones(5))
+    assert(abs(dt_mse.tree_.impurity[0] - dt_axis.tree_.impurity[0]) < 0.01)
+    assert(abs(dt_mse.tree_.impurity[1] - dt_axis.tree_.impurity[1]) < 0.01) 
     assert(abs(dt_axis.tree_.impurity[2]) < 0.01)
 
     # Test axis projections where a `sample_weight` is not explicitly provided.
     # This is equivalent to providing uniform sample weights, though
     # the internal logic is different:
     dt_axis.fit(X=[[3], [5], [8], [3], [5]], y=[[3,3], [3,3], [4,4], [7,7], [8,8]])
-    assert(abs(22.0 / 5.0 - dt_axis.tree_.impurity[0]) < 0.01)
-    assert(abs(20.75 / 4.0 - dt_axis.tree_.impurity[1]) < 0.01) 
+    dt_mse.fit(X=[[3], [5], [8], [3], [5]], y=[3, 3, 4, 7, 8])
+    assert(abs(dt_mse.tree_.impurity[0] - dt_axis.tree_.impurity[0]) < 0.01)
+    assert(abs(dt_mse.tree_.impurity[1] - dt_axis.tree_.impurity[1]) < 0.01) 
     assert(abs(dt_axis.tree_.impurity[2]) < 0.01)
 
 def test_oblique_proj():
-    """Check oblique projection criterion produces correct results on small toy dataset:
-
-    -----------------------
+    """Check oblique projection criterion produces correct results on 
+    small toy dataset
+    
+    ------------------
     | X | y1  y2  | weight |
-    -----------------------
+    ------------------
     | 3 |  3   3  |  0.1   |
     | 5 |  3   3  |  0.3   |
     | 8 |  4   4  |  1.0   |
     | 3 |  7   7  |  0.6   |
     | 5 |  8   8  |  0.3   |
-    -----------------------
-    |sum wt:|  2.3         |
-    -----------------------
- 
-    Mean1 = 5
-    Mean2 = 5
-
-    For all the samples, we can get the total error by summing:
-    (Mean1 - y1)^2 * weight or (Mean2 - y)^2 * weight
-
-    I.e., error1      = (5 - 3)^2 * 0.1)
-                      + (5 - 3)^2 * 0.3)
-                      + (5 - 4)^2 * 1.0)
-                      + (5 - 7)^2 * 0.6)
-                      + (5 - 8)^2 * 0.3)
-                      = 0.4 + 1.2 + 1.0 + 2.4 + 2.7
-                      = 7.7
-          error_tot   = 15.4
-
-    Impurity = error / total weight
-             = 7.7 / 2.3
-             = 3.3478260869565
-             or
-             = 15.4 / 2.3
-             = 6.6956521739130
-             or 
-             = 0.0
-             -----------------
-
-    From this root node, the next best split is between X values of 5 and 8.
-    Thus, we have left and right child nodes:
-
-    LEFT                        RIGHT
-    -----------------------     -----------------------
-    | X | y1  y2  | weight |    | X | y1  y2  | weight |
-    -----------------------     -----------------------
-    | 3 |  3   3  |  0.1   |    | 8 |  4   4  |  1.0   |
-    | 3 |  7   7  |  0.6   |    -----------------------
-    | 5 |  3   3  |  0.3   |    |sum wt:|  1.0         |
-    | 5 |  8   8  |  0.3   |    -----------------------
-    -----------------------
-    |sum wt:|  1.3         |
-    -----------------------
-
-    (5.0625 + 3.0625 + 5.0625 + 7.5625) / 4  + 0 = 5.1875
-    4 + 4.667 = 8.667
-
-    Impurity is found in the same way:
-    Left node Mean1 = Mean2 = 5.25
-        error1  = ((5.25 - 3)^2 * 0.1)
-                + ((5.25 - 7)^2 * 0.6)
-                + ((5.25 - 3)^2 * 0.3)
-                + ((5.25 - 8)^2 * 0.3)
-                = 6.13125
-      error_tot = 12.2625
-
-    Left Impurity = Total error / total weight
-            = 6.13125 / 1.3
-            = 4.716346153846154
-            or
-            = 12.2625 / 1.3
-            = 9.43269231
-            or
-            = 0.0
-            -------------------
-
-    Likewise for Right node:
-    Right node Mean1 = Mean2 = 4
-    Total error = ((4 - 4)^2 * 1.0)
-                = 0
-
-    Right Impurity = Total error / total weight
-            = 0 / 1.0
-            = 0.0
-            ------
+    ------------------
     """
     dt_oblique = DecisionTreeRegressor(random_state=3, criterion="oblique",
+                                   max_leaf_nodes=2)
+    dt_mse = DecisionTreeRegressor(random_state=3, criterion="mse",
                                    max_leaf_nodes=2)
 
     # Test oblique projection where sample weights are non-uniform (as illustrated above):
     dt_oblique.fit(X=[[3], [5], [8], [3], [5]], y=[[3, 3], [3, 3], [4, 4], [7, 7], [8, 8]],
                sample_weight=[0.1, 0.3, 1.0, 0.6, 0.3])
-    print(dt_oblique.tree_.impurity)
-    assert(abs(7.7 / 2.3 - dt_oblique.tree_.impurity[0]) < 0.01 
-        or abs(2.0 * 7.7 / 2.3 - dt_oblique.tree_.impurity[0]) < 0.01 
+
+    dt_mse.fit(X=[[3], [5], [8], [3], [5]], y=[3, 3, 4, 7, 8],
+               sample_weight=[0.1, 0.3, 1.0, 0.6, 0.3])
+
+    assert(abs(dt_mse.tree_.impurity[0] - dt_oblique.tree_.impurity[0]) < 0.01 
+        or abs(2.0 * dt_mse.tree_.impurity[0] - dt_oblique.tree_.impurity[0]) < 0.01 
         or abs(dt_oblique.tree_.impurity[0]) < 0.01)
-    assert(abs(6.13125 / 1.3 - dt_oblique.tree_.impurity[1]) < 0.01 
-        or abs(2.0 * 6.13125 / 1.3 - dt_oblique.tree_.impurity[1]) < 0.01 
+    assert(abs(dt_mse.tree_.impurity[1] - dt_oblique.tree_.impurity[1]) < 0.01 
+        or abs(2.0 * dt_mse.tree_.impurity[1]- dt_oblique.tree_.impurity[1]) < 0.01 
         or abs(dt_oblique.tree_.impurity[1]) < 0.01)
     assert(abs(dt_oblique.tree_.impurity[2]) < 0.01)
 
     # Test oblique projection where all sample weights are uniform:
     dt_oblique.fit(X=[[3], [5], [8], [3], [5]], y=[[3,3], [3,3], [4,4], [7,7], [8,8]],
                sample_weight=np.ones(5))
-    
-    assert(abs(22.0 / 5.0 - dt_oblique.tree_.impurity[0]) < 0.01 
-        or abs(2.0 *  22.0 / 5.0 - dt_oblique.tree_.impurity[0]) < 0.01 
+    dt_mse.fit(X=[[3], [5], [8], [3], [5]], y=[3, 3, 4, 7, 8],
+               sample_weight=np.ones(5))
+    assert(abs(dt_mse.tree_.impurity[0] - dt_oblique.tree_.impurity[0]) < 0.01 
+        or abs(2.0 * dt_mse.tree_.impurity[0] - dt_oblique.tree_.impurity[0]) < 0.01 
         or abs(dt_oblique.tree_.impurity[0]) < 0.01)
-    assert(abs(20.75 / 4.0 - dt_oblique.tree_.impurity[1]) < 0.01 
-        or abs(2.0 * 20.75 / 4.0 - dt_oblique.tree_.impurity[1]) < 0.01 
+    assert(abs(dt_mse.tree_.impurity[1] - dt_oblique.tree_.impurity[1]) < 0.01 
+        or abs(2.0 * dt_mse.tree_.impurity[1]- dt_oblique.tree_.impurity[1]) < 0.01 
         or abs(dt_oblique.tree_.impurity[1]) < 0.01)
     assert(abs(dt_oblique.tree_.impurity[2]) < 0.01)
 
@@ -1995,11 +1875,12 @@ def test_oblique_proj():
     # This is equivalent to providing uniform sample weights, though
     # the internal logic is different:
     dt_oblique.fit(X=[[3], [5], [8], [3], [5]], y=[[3,3], [3,3], [4,4], [7,7], [8,8]])
-    assert(abs(22.0 / 5.0 - dt_oblique.tree_.impurity[0]) < 0.01 
-        or abs(2.0 *  22.0 / 5.0 - dt_oblique.tree_.impurity[0]) < 0.01 
+    dt_mse.fit(X=[[3], [5], [8], [3], [5]], y=[3, 3, 4, 7, 8])
+    assert(abs(dt_mse.tree_.impurity[0] - dt_oblique.tree_.impurity[0]) < 0.01 
+        or abs(2.0 * dt_mse.tree_.impurity[0] - dt_oblique.tree_.impurity[0]) < 0.01 
         or abs(dt_oblique.tree_.impurity[0]) < 0.01)
-    assert(abs(20.75 / 4.0 - dt_oblique.tree_.impurity[1]) < 0.01 
-        or abs(2.0 * 20.75 / 4.0 - dt_oblique.tree_.impurity[1]) < 0.01 
+    assert(abs(dt_mse.tree_.impurity[1] - dt_oblique.tree_.impurity[1]) < 0.01 
+        or abs(2.0 * dt_mse.tree_.impurity[1]- dt_oblique.tree_.impurity[1]) < 0.01 
         or abs(dt_oblique.tree_.impurity[1]) < 0.01)
     assert(abs(dt_oblique.tree_.impurity[2]) < 0.01)
 
