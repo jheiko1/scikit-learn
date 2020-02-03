@@ -2,14 +2,11 @@
 ===============================================================================
 Comparing different split criteria for random forest regression on toy datasets
 ===============================================================================
-
 An example to compare the different split criteria available for
 :class:`sklearn.ensemble.RandomForestRegressor`.
-
 Metrics used to evaluate these splitters include Mean Squared Error (MSE), a
 measure of distance between the true target (`y_true`) and the predicted output
 (`y_pred`), and runtime.
-
 For visual examples of these datasets, see
 :ref:`sphx_glr_auto_examples_datasets_plot_nonlinear_regression_datasets.py`.
 """
@@ -19,7 +16,7 @@ For visual examples of these datasets, see
 
 import time
 from itertools import product
-from multiprocessing import Pool
+from joblib import Parallel, delayed
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -65,7 +62,6 @@ def _test_forest(X, y, regr):
 ###############################################################################
 def main(simulation_name, n_samples, criterion, n_dimensions, n_iter):
     """Measure the performance of RandomForest under simulation conditions.
-
     Parameters
     ----------
     simulation_name : str
@@ -74,12 +70,11 @@ def main(simulation_name, n_samples, criterion, n_dimensions, n_iter):
         Number of training samples.
     criterion : string
         Split criterion used to train forest. Choose from
-        ("mse", "mae", "friedman_mse", "axis", "oblique").
+        ("mse", "mae", "friedman_mse").
     n_dimensions : int
         Number of features and targets to sample.
     n_iter : int
         Which repeat of the same simulation parameter we're on. Ignored.
-
     Returns
     -------
     simulation_name : str
@@ -96,7 +91,7 @@ def main(simulation_name, n_samples, criterion, n_dimensions, n_iter):
     runtime : float
         Runtime (in seconds).
     """
-    print(simulation_name, n_samples)
+    print(simulation_name, n_samples, criterion, n_dimensions, n_iter)
 
     # Get simulation parameters and validation dataset
     sim, noise, (X_test, y_test) = simulations[simulation_name]
@@ -133,7 +128,7 @@ print("Constructing parameter space...")
 n_dimensions = 10
 simulation_names = simulations.keys()
 sample_sizes = np.arange(5, 51, 3)
-criteria = ["mae", "mse", "friedman_mse", "axis", "oblique"]
+criteria = ["mae", "mse", "friedman_mse"]
 
 # Number of times to repeat each simulation setting
 n_repeats = 10
@@ -161,22 +156,20 @@ for simulation_name, (sim, noise) in simulations.items():
 ###############################################################################
 print("Running simulations...")
 
-with Pool() as pool:
+# Run the simulations in parallel
+data = Parallel(n_jobs=4)(delayed(main)(sim, n, crit, n_dim, n_iter) for sim, n, crit, n_dim, n_iter in params)
 
-    # Run the simulations in parallel
-    data = pool.starmap(main, params)
+# Save results as a DataFrame
+columns = ["simulation", "n_samples", "criterion",
+            "n_dimensions", "mse", "runtime"]
+df = pd.DataFrame(data, columns=columns)
 
-    # Save results as a DataFrame
-    columns = ["simulation", "n_samples", "criterion",
-               "n_dimensions", "mse", "runtime"]
-    df = pd.DataFrame(data, columns=columns)
-
-    # Plot the results
-    sns.relplot(x="n_samples",
-                y="mse",
-                hue="criterion",
-                col="simulation",
-                kind="line",
-                data=df,
-                facet_kws={'sharey': False, 'sharex': True})
-    plt.show()
+# Plot the results
+sns.relplot(x="n_samples",
+            y="mse",
+            hue="criterion",
+            col="simulation",
+            kind="line",
+            data=df,
+            facet_kws={'sharey': False, 'sharex': True})
+plt.show()
