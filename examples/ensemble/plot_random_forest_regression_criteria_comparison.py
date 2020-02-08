@@ -58,14 +58,43 @@ def _test_forest(X, y, regr):
     y_pred = regr.predict(X)
     return mean_squared_error(y, y_pred)
 
+def _prep_data(sim_dict, simulation_name, max_n_samples, n_dimensions):
+    """Generate train and test data for all trials."""
+    # Get simulation parameters and validation dataset
+    sim, noise, (X_test, y_test) = simulations[simulation_name]
+    n_samples = int(max_n_samples)
+    n_dimensions = int(n_dimensions)
+
+    # Sample training data
+    if noise is not None:
+        X_train, y_train = sim(n_samples=n_samples,
+                               n_dimensions=n_dimensions,
+                               noise=noise,
+                               random_state=random_state)
+    else:
+        X_train, y_train = sim(n_samples=n_samples,
+                               n_dimensions=n_dimensions,
+                               random_state=random_state)
+    sim_dict[simulation_name] = (X_train, y_train, X_test, y_test)
+    return sim_dict
 
 ###############################################################################
-def main(simulation_name, n_samples, criterion, n_dimensions, n_iter):
+def main(simulation_name, sim_data, n_samples, criterion, n_dimensions, n_iter):
     """Measure the performance of RandomForest under simulation conditions.
     Parameters
     ----------
     simulation_name : str
         Key from `simulations` dictionary.
+    sim_data: dict
+        Contains X_train, y_train, X_test, and y_test for each simulation_name
+            X_train : np.array #TODO check this
+                All X training data for given simulation
+            y_train : np.array # TODO
+                All y training data for given simulation
+            X_test : np.array #TODO check this
+                All X testing data for given simulation
+            y_test : np.array # TODO
+                All y testing data for given simulation
     n_samples : int
         Number of training samples.
     criterion : string
@@ -93,25 +122,16 @@ def main(simulation_name, n_samples, criterion, n_dimensions, n_iter):
     """
     print(simulation_name, n_samples, criterion, n_dimensions, n_iter)
 
-    # Get simulation parameters and validation dataset
-    sim, noise, (X_test, y_test) = simulations[simulation_name]
-    n_samples = int(n_samples)
-    n_dimensions = int(n_dimensions)
+    # Unpack training and testing data
+    X_train, y_train, X_test, y_test = sim_data
 
-    # Sample training data
-    if noise is not None:
-        X_train, y_train = sim(n_samples=n_samples,
-                               n_dimensions=n_dimensions,
-                               noise=noise,
-                               random_state=random_state)
-    else:
-        X_train, y_train = sim(n_samples=n_samples,
-                               n_dimensions=n_dimensions,
-                               random_state=random_state)
-
+    # Get subset of training data
+    curr_X_train = X_train[0:n_samples]
+    curr_y_train = y_train[0:n_samples]
+    
     # Train forest
     start = time.time()
-    regr = _train_forest(X_train, y_train, criterion)
+    regr = _train_forest(curr_X_train, curr_y_train, criterion)
     stop = time.time()
 
     # Evaluate on testing data and record runtime
@@ -131,11 +151,10 @@ sample_sizes = np.arange(5, 51, 3)
 criteria = ["mae", "mse", "friedman_mse"]
 
 # Number of times to repeat each simulation setting
-n_repeats = 10
+n_repeats = 30
 
 # Create the parameter space
-params = product(simulation_names, sample_sizes, criteria,
-                 [n_dimensions], range(n_repeats))
+params = product(simulation_names, sample_sizes, criteria, range(n_repeats))
 
 
 ###############################################################################
@@ -156,8 +175,15 @@ for simulation_name, (sim, noise) in simulations.items():
 ###############################################################################
 print("Running simulations...")
 
+# Generate training and test data for simulations
+sim_data = {}
+for sim in simulation_names:
+    sim_data = _prep_data(sim_data, sim, sample_sizes[-1], n_dimensions)
+
 # Run the simulations in parallel
-data = Parallel(n_jobs=4)(delayed(main)(sim, n, crit, n_dim, n_iter) for sim, n, crit, n_dim, n_iter in params)
+data = Parallel(n_jobs=-2)(delayed(main)
+                            (sim, sim_data[simulation_name], n, crit, n_dimensions, n_iter) 
+                            for sim, n, crit, n_iter in params)
 
 # Save results as a DataFrame
 columns = ["simulation", "n_samples", "criterion",
