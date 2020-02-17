@@ -43,7 +43,6 @@ simulations = {
     "Independence": [make_independent_noise, None],
 }
 
-
 ###############################################################################
 def _train_forest(X, y, criterion):
     """Fit a RandomForestRegressor with default parameters and specific criterion."""
@@ -58,24 +57,29 @@ def _test_forest(X, y, regr):
     y_pred = regr.predict(X)
     return mean_squared_error(y, y_pred)
 
-def _prep_data(sim_dict, simulation_name, max_n_samples, n_dimensions):
+def _prep_data(sim_dict, simulation_name, max_n_samples, n_dimensions, n_trials):
     """Generate train and test data for all trials."""
     # Get simulation parameters and validation dataset
     sim, noise, (X_test, y_test) = simulations[simulation_name]
     n_samples = int(max_n_samples)
     n_dimensions = int(n_dimensions)
 
-    # Sample training data
-    if noise is not None:
-        X_train, y_train = sim(n_samples=n_samples,
-                               n_dimensions=n_dimensions,
-                               noise=noise,
-                               random_state=random_state)
-    else:
-        X_train, y_train = sim(n_samples=n_samples,
-                               n_dimensions=n_dimensions,
-                               random_state=random_state)
-    sim_dict[simulation_name] = (X_train, y_train, X_test, y_test)
+    np.random.seed(random_state)
+    seeds = np.random.randint(1e8, size=n_trials)
+
+    sim_dict[simulation_name] = {}
+    for i in range(n_trials):
+        # Sample training data
+        if noise is not None:
+            X_train, y_train = sim(n_samples=n_samples,
+                                n_dimensions=n_dimensions,
+                                noise=noise,
+                                random_state=seeds[i])
+        else:
+            X_train, y_train = sim(n_samples=n_samples,
+                                n_dimensions=n_dimensions,
+                                random_state=seeds[i])
+        sim_dict[simulation_name][i] = (np.copy(X_train), np.copy(y_train), np.copy(X_test), np.copy(y_test))
     return sim_dict
 
 ###############################################################################
@@ -85,8 +89,8 @@ def main(simulation_name, sim_data, n_samples, criterion, n_dimensions, n_iter):
     ----------
     simulation_name : str
         Key from `simulations` dictionary.
-    sim_data: dict
-        Contains X_train, y_train, X_test, and y_test for each simulation_name
+    sim_data: tuple
+        Contains X_train, y_train, X_test, and y_tests
             X_train : np.array #TODO check this
                 All X training data for given simulation
             y_train : np.array # TODO
@@ -178,12 +182,12 @@ print("Running simulations...")
 # Generate training and test data for simulations
 sim_data = {}
 for sim in simulation_names:
-    sim_data = _prep_data(sim_data, sim, sample_sizes[-1], n_dimensions)
+    sim_data = _prep_data(sim_data, sim, sample_sizes[-1], n_dimensions, n_repeats)
 
 # Run the simulations in parallel
 data = Parallel(n_jobs=-2)(delayed(main)
-                            (sim, sim_data[simulation_name], n, crit, n_dimensions, n_iter) 
-                            for sim, n, crit, n_iter in params)
+                        (sim_name, sim_data[sim_name][n_iter], n, crit, n_dimensions, n_iter) 
+                            for sim_name, n, crit, n_iter in params)
 
 # Save results as a DataFrame
 columns = ["simulation", "n_samples", "criterion",
@@ -198,4 +202,6 @@ sns.relplot(x="n_samples",
             kind="line",
             data=df,
             facet_kws={'sharey': False, 'sharex': True})
+plt.tight_layout()
+plt.savefig("splitter_comparison_02_17.png")
 plt.show()
